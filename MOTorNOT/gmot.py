@@ -3,7 +3,26 @@ from MOTorNOT.parameters import constants, atom, plot_params
 from MOTorNOT.beams import Beam
 
 class gratingMOT():
-    def __init__(self, position, alpha, radius, field, power, detuning, polarization, R1=1/3, show_incident = True, show_positive = True, show_negative = True):
+    def __init__(self, params, show_incident = True, show_positive = True, show_negative = True):
+        ''' Creates a virtual laser beam. Params dict should contain the following fields:
+                position (float): grating offset from z=0
+                alpha (float): diffraction angle
+                radius (float): radius of incident beam
+                detuning (float): detuning of incident beam
+                field (method): function returning the magnetic field at a position vector X
+                power (float): power of the incident beam
+                polarization (float): +/-1 for circular polarization
+                R1 (float): diffraction efficiency
+        '''
+        position = params['position']
+        alpha = params['alpha']
+        detuning = params['detuning']
+        radius = params['radius']
+        self.field = params['field']
+        power = params['power']
+        polarization = params['polarization']
+        R1 = params['R1']
+
         self.beams = []
         if show_positive:
             for n in [1,2,3]:
@@ -12,9 +31,12 @@ class gratingMOT():
             for n in [-1, -2, -3]:
                 self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position))
         if show_incident:
-            self.beams.append(Beam(atom['k']*np.array([0,0,-1]), power, radius, detuning, polarization))
+            self.beams.append(Beam({'wavevector': atom['k']*np.array([0,0,-1]),
+                                    'power': power,
+                                    'radius': radius,
+                                    'detuning': detuning,
+                                    'handedness': polarization}))
 
-        self.field = field
 
     def acceleration(self, X, V):
         return self.force(X,V)/atom['m']

@@ -28,12 +28,19 @@ class Coils():
         subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
 
 class Coil():
-    def __init__(self, R, Z0, N, I, axis):
-        self.R = R
-        self.Z0 = Z0
-        self.N = N
-        self.I = I
-        self.axis = axis
+    def __init__(self, params):
+        ''' Creates a virtual laser beam. Params dict should contain the following fields:
+                radius (float): coil radius
+                z (float): offset from the origin in mm
+                N (int): number of turns
+                I (float): current
+                axis (int): 0, 1, or 2 to point the coil along the x, y, or z axis
+        '''
+        self.R = params['radius']
+        self.Z0 = params['z']
+        self.N = params['N']
+        self.I = params['I']
+        self.axis = params['axis']
 
     def field(self, X, V = None):
         ''' Numerically evaluates the field for a coil placed a distance self.Z0 from the origin along the axis of choice. Axes other than z are
