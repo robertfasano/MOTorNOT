@@ -1,1 +1,3 @@
 *.egg*
+*_pycache_*
+*.ipynb_checkpoints*

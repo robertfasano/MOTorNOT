@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.special import ellipeinc, ellipk
-from parameters import constants, plot_params
+from MOTorNOT.parameters import constants, plot_params
 
 def assembleCoil(wire_diameter, turns, R, Z0, I, axis):
     coils = []
@@ -24,7 +24,7 @@ class Coils():
         return field
 
     def plot(self):
-        from plotting import subplots
+        from MOTorNOT.plotting import subplots
         subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
 
 class Coil():
@@ -88,3 +88,7 @@ class Coil():
             Rx = np.array([[1,0,0],[0,0,1], [0,-1,0]])
             return np.dot(Rx,field.T).T
         return field
+
+    def plot(self):
+        from MOTorNOT.plotting import subplots
+        subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)

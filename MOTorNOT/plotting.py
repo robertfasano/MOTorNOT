@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
-from parameters import plot_params
+from MOTorNOT.parameters import plot_params
 from matplotlib import colors
 
 def subplots(func, numpoints = 100, label = None, units = None, scale = 1):
@@ -14,7 +14,8 @@ def subplots(func, numpoints = 100, label = None, units = None, scale = 1):
     for plane in ['xy', 'xz', 'yz']:
         plot_2D(func, plane=plane, numpoints = numpoints, ax = ax[1][i], label = label, units = units, scale = scale)
         i += 1
-
+    plt.show()
+    
 def plot_1D(func, axis = 0, numpoints = 100, ax = None, label = None, units = None, scale = 1):
     ax_label = ['x', 'y', 'z'][axis]
     x = np.linspace(plot_params['axlim'][ax_label][0], plot_params['axlim'][ax_label][1], numpoints)

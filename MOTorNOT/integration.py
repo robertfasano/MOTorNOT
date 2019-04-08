@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from parameters import atom
+from MOTorNOT.parameters import atom
 import sys
 import time
 from scipy.integrate import solve_ivp, odeint
@@ -12,7 +12,7 @@ class Atoms():
         ''' Initialize a cloud of atoms at position X0 and velocity V0. '''
         self.X0 = X0
         self.V0 = V0
-        
+
 class Solver():
     def __init__(self, X0, V0, force, recoil, duration):
         self.position = X0
@@ -23,35 +23,35 @@ class Solver():
         self.duration = duration
         self.last_percent = '0'
         self.time = 0
-        
+
     def acceleration(self, X, V):
         return self.force(X, V)/atom['m']
-    
+
     def dydt(self, t, y):
         ''' Args:
-                y (array-like): Array of length N where the first N/2 values correspond 
-                                to position and the last N/2 to velocity. 
+                y (array-like): Array of length N where the first N/2 values correspond
+                                to position and the last N/2 to velocity.
             Returns:
                 '''
         N = int(len(y)/6)
-        
+
         ''' Reconstruct arrays in (N,3) shape from flattened arrays '''
         X = y[0:3*N].reshape(N,3)
         V = y[3*N::].reshape(N,3)
-        
+
         a = self.acceleration(X, V)
 
         ''' Flatten result to pass back into solver '''
         a = np.append(V.flatten(), a.flatten())
-        
+
         self.status(t/self.duration)
         return a
-        
+
     def f(self, y, t):
         return self.dydt(t,y)
-    
+
     def func(self, y, t):
-        
+
         N = int(len(y)/6)
         X = y[0:3*N].reshape(N,3)
         V = y[3*N::].reshape(N,3)
@@ -102,7 +102,7 @@ class Solver():
             x[ax_label+str(j)] = y[i]
             if i%3 == 2:
                 j += 1
-                
+
         v = pd.DataFrame(index = t)
         j = 0
         for i in range(int(len(y)/2), len(y)):
@@ -133,7 +133,7 @@ class Solver():
                 trapped_x_indices.append('%s%i'%(ax,i))
                 trapped_v_indices.append('v%s%i'%(ax,i))
         return trapped_x_indices, trapped_v_indices
-        
+
     def trapping_efficiency(self, x):
         ''' Check the number of atoms inside the overlap region of the beam '''
         count = 0
@@ -144,20 +144,20 @@ class Solver():
                 count += 1
             i += 1
         return count/N_atoms
-            
+
     def velocity_distribution(self, V, axis):
-        ax_label = ['vx', 'vy', 'vz'][axis] 
+        ax_label = ['vx', 'vy', 'vz'][axis]
         for i in range(len(self.history)):
             plt.hist(self.history[[x for x in self.history.columns if ax_label in x]].iloc[i])
             plt.savefig('./data/%i.png'%i)
             plt.close()
-            
+
     def histogram(self, V, bins=50):
         plt.figure()
 #        V = np.linalg.norm(V, axis=1)
         plt.hist(V, bins=bins)
         plt.xlabel(r'$v$ (m/s)')
-    
+
     def status(self, percent_done):
         if '%.2f'%percent_done == self.last_percent:
             return

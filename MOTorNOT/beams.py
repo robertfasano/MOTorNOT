@@ -1,5 +1,5 @@
 import numpy as np
-from parameters import constants, atom
+from MOTorNOT.parameters import constants, atom, plot_params
 
 class Beam():
     def __init__(self, wavevector, power, radius, detuning, handedness, origin = np.array([0,0,0])):
@@ -12,27 +12,27 @@ class Beam():
         self.handedness = handedness
         self.detuning = detuning
         self.origin = origin
-        
+
         ''' Form a pair of vectors orthogonal to the wavevector '''
         r = np.array([1,1,1])
         self.orth1 = r-np.outer(np.dot(self.direction, r), self.direction)[0]
         self.orth1 = np.array([1,0,0])
         self.orth2 = np.cross(self.direction, self.orth1)
-        
+
         self.orth1 = self.orth1 / np.linalg.norm(self.orth1)
         self.orth2 = self.orth2 /  np.linalg.norm(self.orth2)
-        
+
     def exists_at(self, X):
         ''' A boolean check for whether or not the beam exists at position X. Only works for beams along the x, y, or z axes; arbitrary directions will be supported later. Also assumes that the beam passes through the origin. '''
         X0 = X-self.origin
         return np.logical_and(np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1) < self.radius, self.angular_inequality(X0))
-    
+
 
     def angular_inequality(self, X):
         phi = np.mod(np.arctan2(np.dot(X, self.orth2), np.dot(X, self.orth1)),2*np.pi)
         return True
 #        return np.logical_and(0 < phi, phi < 2*np.pi)
-    
+
     def eta(self, b):
         xi = 0
         b = b.copy().T
@@ -58,7 +58,7 @@ class Beam():
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
-    
+
 class Beams():
     def __init__(self, beams, field):
         self.beams = beams
@@ -66,13 +66,13 @@ class Beams():
 
     def acceleration(self, X, V):
         return self.force(X,V)/atom['m']
-    
+
     def total_intensity(self, X):
         It = 0
         for beam in self.beams:
             It += beam.exists_at(X) * beam.intensity
         return It
-    
+
     def recoil_serial(self, X, V, duration):
         ''' Simulate random momentum kicks from all beams summed over a duration. Since the duration may be slower
             than the scattering rate, we exploit scale invariance to reduce the timestep by a factor and the step
@@ -87,7 +87,7 @@ class Beams():
             random_vector /= np.linalg.norm(random_vector, axis=1)[:,np.newaxis]
             V += step_size[:,np.newaxis] * random_vector
         return V
-        
+
     def recoil(self, X, V, duration, full_output = False):
         ''' Simulate random momentum kicks from all beams summed over a duration. Since the duration may be slower
             than the scattering rate, we exploit scale invariance to reduce the timestep by a factor and the step
@@ -103,15 +103,15 @@ class Beams():
 
         if full_output:
             return kick
-        else:        
+        else:
             return kick.sum(axis=2)
-    
+
     def scattering_rate(self, X, V):
         rate = 0
         for beam in self.beams:
             rate += beam.scattering_rate(X, V, self.field(X), self.total_intensity(X))
         return rate
-    
+
     def force(self, X, V):
         force = np.atleast_2d(np.zeros(X.shape))
         betaT = self.total_intensity(X)/atom['Isat']
@@ -119,7 +119,11 @@ class Beams():
         for beam in self.beams:
             force += constants['hbar']* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
         return force
-    
+
+    def plot(self):
+        from MOTorNOT.plotting import subplots
+        subplots(self.acceleration, numpoints=plot_params['numpoints'], label='a', units = r'm/s^2')
+
 def prepare_slowing_beam(beams = [], axis = 0, origin = np.array([0,0,0])):
     vec = k*np.array([0,0,0])
     vec[axis] = 1

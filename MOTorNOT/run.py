@@ -1,9 +1,9 @@
-from parameters import state, atom
-from gmot import gratingMOT
-from coils import Coil, Coils
+from MOTorNOT.parameters import state, atom
+from MOTorNOT.gmot import gratingMOT
+from MOTorNOT.coils import Coil, Coils
 import matplotlib.pyplot as plt
 import numpy as np
-from maxwell_boltzmann import trapping_fraction
+from MOTorNOT.maxwell_boltzmann import trapping_fraction
 
 def prepare(state):
     ''' Prepares a MOT with settings defined by the passed state dict.
@@ -81,7 +81,7 @@ def cost(state, params={'atoms':100, 'vmin':5, 'vmax':30}):
     efficiency = trapping_fraction(vmin, vmax, state['oven']['T'])
     print(vmin, vmax, efficiency)
     return efficiency
-    
-    
+
+
 if __name__ == '__main__':
     mot, coils = prepare(state)

@@ -1,5 +1,5 @@
 import numpy as np
-from parameters import constants, atom
+from MOTorNOT.parameters import constants, atom
 from scipy.integrate import quad
 
 ''' Atomic initial conditions '''

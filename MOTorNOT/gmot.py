@@ -1,6 +1,6 @@
 import numpy as np
-from parameters import constants, atom, plot_params
-from beams import Beam
+from MOTorNOT.parameters import constants, atom, plot_params
+from MOTorNOT.beams import Beam
 
 class gratingMOT():
     def __init__(self, position, alpha, radius, field, power, detuning, polarization, R1=1/3, show_incident = True, show_positive = True, show_negative = True):
@@ -40,7 +40,7 @@ class gratingMOT():
         return force
 
     def plot(self):
-        from plotting import subplots
+        from MOTorNOT.plotting import subplots
         subplots(self.acceleration, numpoints=plot_params['numpoints'], label='a', units = r'm/s^2')
 
 class diffractedBeam():
@@ -93,5 +93,3 @@ class diffractedBeam():
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
-
-    
