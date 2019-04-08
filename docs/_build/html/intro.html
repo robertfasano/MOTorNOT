@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Getting started &mdash; MOTsim  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code reference" href="reference.html" />
+    <link rel="prev" title="Welcome to MOTsim’s documentation!" href="index.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> MOTsim
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Welcome to MOTsim&#8217;s documentation!</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#defining-parameters">Defining parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-the-mot">Visualizing the MOT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-a-simulation">Running a simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Code reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MOTsim</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Getting started</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/intro.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="defining-parameters">
+<h2>Defining parameters<a class="headerlink" href="#defining-parameters" title="Permalink to this headline">¶</a></h2>
+<p>All parameters for the simulation are packaged into several different dictionaries
+in the <code class="docutils literal"><span class="pre">parameters.py</span></code> file. The <code class="docutils literal"><span class="pre">constants</span></code> dict stores physical constants. The
+<code class="docutils literal"><span class="pre">atoms</span></code> dict stores atom-specific properties, such as the mass and transition
+properties like the wavelength and linewidth. All other parameters are packaged into
+the <code class="docutils literal"><span class="pre">state</span></code> dict, which nests all variables into a format compatible
+with EMERGENT (more on that later). An example of instantiating a virtual MOT object
+is given by the <code class="docutils literal"><span class="pre">prepare()</span></code> method in <code class="docutils literal"><span class="pre">run.py</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+  <span class="sd">&#39;&#39;&#39; Prepares a MOT with settings defined by the passed state dict.</span>
+<span class="sd">      You can visualize the coil field or MOT acceleration profile by calling</span>
+<span class="sd">      coils.plot() or mot.plot() respectively. &#39;&#39;&#39;</span>
+
+  <span class="sd">&#39;&#39;&#39; INSTANTIATE COILS &#39;&#39;&#39;</span>
+  <span class="n">Coil1</span> <span class="o">=</span> <span class="n">Coil</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil1&#39;</span><span class="p">][</span><span class="s1">&#39;R&#39;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil1&#39;</span><span class="p">][</span><span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil1&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">],</span> <span class="o">-</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil1&#39;</span><span class="p">][</span><span class="s1">&#39;I&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+  <span class="n">Coil2</span> <span class="o">=</span> <span class="n">Coil</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil2&#39;</span><span class="p">][</span><span class="s1">&#39;R&#39;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil2&#39;</span><span class="p">][</span><span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil2&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;coil2&#39;</span><span class="p">][</span><span class="s1">&#39;I&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+  <span class="n">coils</span> <span class="o">=</span> <span class="n">Coils</span><span class="p">([</span><span class="n">Coil1</span><span class="p">,</span> <span class="n">Coil2</span><span class="p">])</span>
+
+  <span class="sd">&#39;&#39;&#39; INSTANTIATE BEAMS &#39;&#39;&#39;</span>
+  <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">atom</span><span class="p">[</span><span class="s1">&#39;wavelength&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">][</span><span class="s1">&#39;d&#39;</span><span class="p">])</span>
+  <span class="n">mot</span> <span class="o">=</span> <span class="n">gratingMOT</span><span class="p">(</span><span class="n">position</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">][</span><span class="s1">&#39;position&#39;</span><span class="p">],</span>
+                     <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                     <span class="n">radius</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;trapping&#39;</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">],</span>
+                     <span class="n">field</span> <span class="o">=</span> <span class="n">coils</span><span class="o">.</span><span class="n">field</span><span class="p">,</span>
+                     <span class="n">power</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;trapping&#39;</span><span class="p">][</span><span class="s1">&#39;power&#39;</span><span class="p">],</span>
+                     <span class="n">detuning</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;trapping&#39;</span><span class="p">][</span><span class="s1">&#39;detuning&#39;</span><span class="p">],</span>
+                     <span class="n">polarization</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;trapping&#39;</span><span class="p">][</span><span class="s1">&#39;polarization&#39;</span><span class="p">],</span>
+                     <span class="n">R1</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">][</span><span class="s1">&#39;R1&#39;</span><span class="p">],</span>
+                     <span class="n">show_negative</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                     <span class="n">show_incident</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">mot</span><span class="p">,</span> <span class="n">coils</span>
+</pre></div>
+</div>
+<p>You can see above how the state dict variables are used to create the MOT.
+In particular, here we instantiate two Coil objects, which provide methods for
+calculating the magnetic field surrounding a wire loop. Next, we create an instance
+of the <code class="docutils literal"><span class="pre">gratingMOT</span></code> class from <code class="docutils literal"><span class="pre">gmot.py</span></code>, which simulates the beam geometry
+and scattering forces for a grating MOT with the given state.</p>
+</div>
+<div class="section" id="visualizing-the-mot">
+<h2>Visualizing the MOT<a class="headerlink" href="#visualizing-the-mot" title="Permalink to this headline">¶</a></h2>
+<p>After creating the <code class="docutils literal"><span class="pre">`coils</span></code> objects, either with the <code class="docutils literal"><span class="pre">prepare</span></code> method
+above or with your own definitions, you can call <code class="docutils literal"><span class="pre">coils.plot()</span></code> to display the
+magnetic field in the vicinity of the MOT. Similarly, <code class="docutils literal"><span class="pre">mot.plot()</span></code> shows the
+spatial Zeeman acceleration profile of the MOT.</p>
+</div>
+<div class="section" id="running-a-simulation">
+<h2>Running a simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
+<p>In order to run a simulation, you should define a method with two arguments: the
+state dict as defined in <code class="docutils literal"><span class="pre">parameters.py</span></code> and a params dict containing any other
+arguments you want to pass into the simulation (such as timestep or total duration).
+You&#8217;ll find a basic virtual experiment in
+<code class="docutils literal"><span class="pre">run.py</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;atoms&#39;</span><span class="p">:</span><span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;vmin&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;vmax&#39;</span><span class="p">:</span><span class="mi">30</span><span class="p">}):</span>
+    <span class="sd">&#39;&#39;&#39; Prepares a MOT and runs a simulation to determine maximum capture velocity &#39;&#39;&#39;</span>
+    <span class="n">mot</span><span class="p">,</span> <span class="n">coils</span> <span class="o">=</span> <span class="n">prepare</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="sd">&#39;&#39;&#39; DEFINE INITIAL CONDITIONS &#39;&#39;&#39;</span>
+    <span class="n">N_atoms</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atoms&#39;</span><span class="p">]</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_atoms</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">X</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">state</span><span class="p">[</span><span class="s1">&#39;trapping&#39;</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">N_atoms</span><span class="p">)</span>       <span class="c1"># initial position</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_atoms</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">V</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;vmin&#39;</span><span class="p">],</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;vmax&#39;</span><span class="p">],</span> <span class="n">N_atoms</span><span class="p">)</span>
+
+    <span class="sd">&#39;&#39;&#39; Integrate atomic trajectories &#39;&#39;&#39;</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">mot</span><span class="p">)</span>
+    <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">analyze_capture_velocity</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">efficiency</span> <span class="o">=</span> <span class="n">trapping_fraction</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;oven&#39;</span><span class="p">][</span><span class="s1">&#39;T&#39;</span><span class="p">])</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">efficiency</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">efficiency</span>
+</pre></div>
+</div>
+<p>The first thing this method does is to set up a grating MOT with the <code class="docutils literal"><span class="pre">prepare()</span></code> method.
+Next, <code class="docutils literal"><span class="pre">cost()</span></code> sets up an ensemble of atoms at a location defined by the beam geometry
+in the <code class="docutils literal"><span class="pre">state</span></code> dict and with velocities linearly spaced between two values contained
+in the <code class="docutils literal"><span class="pre">params</span></code> dict. Next, it calls <code class="docutils literal"><span class="pre">simulate()</span></code> to integrate the atomic
+trajectories and determine the minimum and maximum capture velocities, before
+finally determining the capture fraction as an integral over the Maxwell-Boltzmann
+distribution at a user-specified temperature.</p>
+<p>In order to run the simulation, you can call the method at the bottom of the
+<code class="docutils literal"><span class="pre">run.py</span></code> file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+  <span class="n">efficiency</span> <span class="o">=</span> <span class="n">cost</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+  <span class="k">print</span><span class="p">(</span><span class="n">efficiency</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">state</span></code> dict is automatically imported from your <code class="docutils literal"><span class="pre">parameters.py</span></code> file
+before launching the simulation.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="reference.html" class="btn btn-neutral float-right" title="Code reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to MOTsim’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Robert J.Fasano
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
