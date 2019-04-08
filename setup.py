@@ -9,8 +9,8 @@ setup(
     description='Magneto-optical trap simulation package',
     author='Robert Fasano',
     author_email='robert.j.fasano@colorado.edu',
-    packages=find_packages(exclude=['docs']),
+    packages=find_packages('myproject'),
     license='MIT',
     long_description=open('README.md').read(),
-    install_requires=['ipython', 'matplotlib', 'pandas', 'scipy', 'jupyter']
+    install_requires=['ipython', 'matplotlib', 'pandas', 'scipy']
 )
