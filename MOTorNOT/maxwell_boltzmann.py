@@ -15,10 +15,10 @@ def trapping_fraction(vmin, vmax, T):
 def generate_maxwell_boltzmann(T, N, vmax = None):
     ''' Rejection sampling routine to generate a Maxwell-Boltzmann distribution at temperature T.'''
     v = []
-    vmean = np.sqrt(8*constants['kB']*T/np.pi/m)
+    vmean = np.sqrt(8*constants['kB']*T/np.pi/atom['m'])
     if vmax == None:
-        vmax = vmean+5*np.sqrt(constants['kB']*T/m)
-    vprob = np.sqrt(2*constants['kB']*T/m)
+        vmax = vmean+5*np.sqrt(constants['kB']*T/atom['m'])
+    vprob = np.sqrt(2*constants['kB']*T/atom['m'])
     pmax = maxwell_boltzmann(vprob, T)
 
 
