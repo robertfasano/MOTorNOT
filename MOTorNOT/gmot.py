@@ -80,8 +80,8 @@ class diffractedBeam():
         self.z0 = -position
 
     def exists_at(self, X):
-        x = X.T[0] - self.wavevector[0]/atom['k'] * (X.T[2]-self.z0)/np.cos(self.alpha)
-        y = X.T[1] - self.wavevector[1]/atom['k'] * (X.T[2]-self.z0)/np.cos(self.alpha)
+        x = X.T[0] - self.wavevector[0]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
+        y = X.T[1] - self.wavevector[1]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
         r = np.sqrt(x**2+y**2)
         phi = np.mod(np.arctan2(y, x),2*np.pi)
 
