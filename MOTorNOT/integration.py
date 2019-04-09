@@ -15,8 +15,8 @@ class Atoms():
 
 class Solver():
     def __init__(self, X0, V0, force, recoil, duration):
-        self.position = X0
-        self.velocity = V0
+        self.position = X0.copy()
+        self.velocity = V0.copy()
         self.force = force
         self.recoil = recoil
         self.last_time = None
