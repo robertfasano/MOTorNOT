@@ -5,17 +5,17 @@ from MOTorNOT.parameters import plot_params
 from matplotlib import colors
 
 def subplots(func, numpoints = 100, label = None, units = None, scale = 1):
-    fig, ax = plt.subplots(2, 3)
-    fig.set_figheight(10)
+    fig, ax = plt.subplots(1, 3)
+    fig.set_figheight(5)
     fig.set_figwidth(20)
-    for axis in [0, 1, 2]:
-        plot_1D(func, axis = axis, numpoints = numpoints**2, ax = ax[0][axis], label = label, units = units, scale=scale)
+    # for axis in [0, 1, 2]:
+        # plot_1D(func, axis = axis, numpoints = numpoints**2, ax = ax[0][axis], label = label, units = units, scale=scale)
     i = 0
     for plane in ['xy', 'xz', 'yz']:
-        plot_2D(func, plane=plane, numpoints = numpoints, ax = ax[1][i], label = label, units = units, scale = scale)
+        plot_2D(func, plane=plane, numpoints = numpoints, ax = ax[i], label = label, units = units, scale = scale)
         i += 1
     plt.show()
-    
+
 def plot_1D(func, axis = 0, numpoints = 100, ax = None, label = None, units = None, scale = 1):
     ax_label = ['x', 'y', 'z'][axis]
     x = np.linspace(plot_params['axlim'][ax_label][0], plot_params['axlim'][ax_label][1], numpoints)
