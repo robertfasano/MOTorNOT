@@ -14,7 +14,7 @@ class Atoms():
         self.V0 = V0
 
 class Solver():
-    def __init__(self, X0, V0, force, recoil, duration):
+    def __init__(self, X0, V0, force, recoil, duration, dt=None):
         self.position = X0.copy()
         self.velocity = V0.copy()
         self.force = force
@@ -23,6 +23,7 @@ class Solver():
         self.duration = duration
         self.last_percent = '0'
         self.time = 0
+        self.dt = dt
 
     def acceleration(self, X, V):
         return self.force(X, V)/atom['m']
@@ -88,9 +89,13 @@ class Solver():
         self.start_time = time.time()
         self.timestep = []
         self.dv = []
-        r = solve_ivp(self.dydt, tspan, y0)
-#        t = np.arange(0,self.duration, 1e-6)
-#        y = odeint(self.dydt, y0, t)
+        if self.dt is not None:
+            t_eval = np.arange(0, self.duration, self.dt)
+            r = solve_ivp(self.dydt, tspan, y0, t_eval=t_eval)
+        else:
+            r = solve_ivp(self.dydt, tspan, y0)
+        # t = np.arange(0,self.duration, 1e-6)
+        # y = odeint(self.dydt, y0, t)
 
         t = r.t
         y = r.y
