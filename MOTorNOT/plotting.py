@@ -120,6 +120,39 @@ def plot_2D(func, plane='xy', numpoints = 100, ax = None, label = None, units = 
         ax.set_xlabel(plane[0] + ' (mm)')
         ax.set_ylabel(plane[1] + ' (mm)')
 
+from scipy.interpolate import griddata
+
+def plot_phase_space_trajectories(x, v, xlim = None, ylim = None):
+    N = int(len(x.columns)/3)
+    if xlim is not None:
+        plt.xlim(xlim)
+    if ylim is not None:
+        plt.ylim(ylim)
+
+    for i in range(N):
+        x0 = x[x.columns[3*i]]
+        vx0 = v[v.columns[3*i]]
+        plt.plot(x0, vx0, '--w')
+        plt.xlabel('x (m)')
+        plt.ylabel('v (m/s)')
+
+def plot_phase_space_force(x, y, color_map='viridis_r', ax = None):
+    ''' Interpolates and plots a cost function sampled at an array of points. It's expected
+        that the passed data fills the bounds of the space. '''
+    x = x.copy()
+    y = y.copy()
+    numpoints = 1000
+    x_highres = np.zeros((numpoints, 2))
+    x_highres[:,0] = np.linspace(x[:,0].min(), x[:,0].max(), numpoints)
+    x_highres[:,1] = np.linspace(x[:,1].min(), x[:,1].max(), numpoints)
+    ordinate_mesh, abscissa_mesh = np.meshgrid(x[:,0], x[:, 1])
+
+
+    ordinate_mesh, abscissa_mesh = np.meshgrid(x_highres[:,0], x_highres[:,1])
+    cost_grid = griddata(x, y, (ordinate_mesh,abscissa_mesh), method='cubic')
+    plot = plt.pcolormesh(ordinate_mesh, abscissa_mesh, cost_grid, cmap=color_map)
+    plt.colorbar().set_label('Force')
+#     plot = plt.contourf(ordinate_mesh, abscissa_mesh, cost_grid, cmap=color_map, levels=30)
 
 def plot_trajectory(df, N = None, axis = 0):
     ax_label = ['x', 'y', 'z'][axis]
