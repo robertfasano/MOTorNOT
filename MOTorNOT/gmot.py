@@ -1,9 +1,9 @@
 import numpy as np
 from MOTorNOT.parameters import constants, atom, plot_params
-from MOTorNOT.beams import Beam
+from MOTorNOT.beams import Beam, GaussianBeam
 
 class gratingMOT():
-    def __init__(self, params, show_incident = True, show_positive = True, show_negative = True):
+    def __init__(self, params, show_incident = True, show_positive = True, show_negative = True, beam_type = 'uniform'):
         ''' Creates a virtual laser beam. Params dict should contain the following fields:
                 position (float): grating offset from z=0
                 alpha (float): diffraction angle
@@ -26,16 +26,21 @@ class gratingMOT():
         self.beams = []
         if show_positive:
             for n in [1,2,3]:
-                self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position))
+                self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position, beam_type=beam_type))
         if show_negative:
             for n in [-1, -2, -3]:
-                self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position))
+                self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position, beam_type=beam_type))
         if show_incident:
-            self.beams.append(Beam({'wavevector': atom['k']*np.array([0,0,-1]),
+            beam_params = {'wavevector': atom['k']*np.array([0,0,-1]),
                                     'power': power,
                                     'radius': radius,
                                     'detuning': detuning,
-                                    'handedness': polarization}))
+                                    'handedness': polarization}
+            if beam_type == 'uniform':
+                self.beams.append(Beam(beam_params))
+            elif beam_type == 'gaussian':
+                self.beams.append(GaussianBeam(beam_params))
+
 
 
     def acceleration(self, X, V):
@@ -50,7 +55,7 @@ class gratingMOT():
     def total_intensity(self, X):
         It = 0
         for beam in self.beams:
-            It += beam.exists_at(X) * beam.intensity
+            It += beam.intensity(X)
         return It
 
     def force(self, X, V):
@@ -66,7 +71,8 @@ class gratingMOT():
         subplots(self.acceleration, numpoints=plot_params['numpoints'], label='a', units = r'm/s^2')
 
 class diffractedBeam():
-    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0])):
+    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform'):
+        self.beam_type = beam_type
         self.n = n
         self.phi = np.pi/3*(4*np.abs(n)-5)
         self.wavevector = atom['k']*np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha), np.sign(n)*np.sin(self.phi)*np.sin(alpha), np.cos(alpha)])
@@ -75,8 +81,8 @@ class diffractedBeam():
         self.detuning = detuning
         self.handedness = handedness
         self.alpha = alpha     # diffraction angle
-        self.intensity = power/np.pi/radius**2
-        self.beta = self.intensity / atom['Isat']
+        self.I = power/np.pi/radius**2
+        self.beta = self.I / atom['Isat']
         self.z0 = -position
 
     def exists_at(self, X):
@@ -105,8 +111,23 @@ class diffractedBeam():
 
         return np.array([eta[-1], eta[0], eta[1]]).T
 
+    def intensity(self, X):
+        x = X.T[0] - self.wavevector[0]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
+        y = X.T[1] - self.wavevector[1]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
+        r = np.sqrt(x**2+y**2)
+        phi = np.mod(np.arctan2(y, x),2*np.pi)
+
+        radial_inequality = (r <= self.radius)
+        angular_inequality = (2*np.pi/3*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/3*np.abs(self.n))
+        vertical_inequality = (X.T[2]-self.z0) > 0
+
+        return self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality
+
     def scattering_rate(self, X, V, b, betaT):
-        prefactor = atom['gamma']/2 * self.exists_at(X)*self.beta
+        if self.beam_type == 'gaussian':
+            prefactor = atom['gamma']/2 * self.intensity(X)/atom['Isat']
+        else:
+            prefactor = atom['gamma']/2 * self.exists_at(X)*self.beta
         summand = 0
         eta = self.eta(b)
         for mF in [-1, 0, 1]:

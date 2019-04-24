@@ -17,8 +17,8 @@ class Beam():
         self.handedness = params['handedness']
 
         self.direction = self.wavevector / np.linalg.norm(self.wavevector)
-        self.intensity = self.power/np.pi/self.radius**2
-        self.beta = self.intensity / atom['Isat']
+        self.I = self.power/np.pi/self.radius**2
+        self.beta = self.I / atom['Isat']
         self.origin = origin
 
         ''' Form a pair of vectors orthogonal to the wavevector '''
@@ -56,8 +56,11 @@ class Beam():
 
         return np.array([eta[-1], eta[0], eta[1]]).T
 
+    def intensity(self, X):
+        return self.exists_at(X) * self.I
+
     def scattering_rate(self, X, V, b, betaT):
-        prefactor = atom['gamma']/2 * self.exists_at(X)*self.beta
+        prefactor = atom['gamma']/2 * self.intensity(X)/atom['Isat']
         summand = 0
         eta = self.eta(b)
         for mF in [-1, 0, 1]:
@@ -66,6 +69,16 @@ class Beam():
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
+
+class GaussianBeam(Beam):
+    def __init__(self, params):
+        super().__init__(params)
+
+    def intensity(self, X):
+        X0 = X-self.origin
+        r = np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1)
+        w = self.radius
+        return self.I*np.exp(-2*r**2/w**2)
 
 class Beams():
     def __init__(self, beams, field):
@@ -78,7 +91,7 @@ class Beams():
     def total_intensity(self, X):
         It = 0
         for beam in self.beams:
-            It += beam.exists_at(X) * beam.intensity
+            It += beam.intensity(X)
         return It
 
     def recoil_serial(self, X, V, duration):
