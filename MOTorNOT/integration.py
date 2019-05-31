@@ -122,6 +122,8 @@ class Solver():
         x.plot(legend=False)
         xmin = x[x.columns[0]].iloc[0]
         plt.ylim([-np.abs(xmin), np.abs(xmin)])
+        plt.xlabel('Time (s)')
+        plt.ylabel('{} (m)'.format(axis))
 
 
     def trapped_atoms(self, x, v, radius, min_height):
