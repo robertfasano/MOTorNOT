@@ -44,7 +44,7 @@ def plot_1D(func, axis = 0, numpoints = 100, ax = None, label = None, units = No
         ax.set_xlabel('%s (mm)'%ax_label)
         ax.set_ylabel(r'$%s$'%(label))
 
-def plot_field(B, coil_axis = 2, plot_axis = 0, numpoints = 100):
+def plot_field(B, coil_axis = 2, plot_axis = 0, numpoints = 30):
     ax_label = ['x', 'y', 'z'][plot_axis]
     plt.figure()
     x = np.linspace(plot_params['axlim'][ax_label][0], plot_params['axlim'][ax_label][1], numpoints)
