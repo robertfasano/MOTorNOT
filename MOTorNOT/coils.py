@@ -48,8 +48,8 @@ class Coil():
         length = 2*np.pi*self.R*self.N
         resistivity = 1.68e-8
         resistance = resistivity*length/np.pi/(d/2)**2
-        return self.I*resistance
-        
+        return np.abs(self.I)**2*resistance
+
     def field(self, X, V = None):
         ''' Numerically evaluates the field for a coil placed a distance self.Z0 from the origin along the axis of choice. Axes other than z are
             handled by rotating the coordinate system, solving along the symmetry axis, then rotating back. '''
