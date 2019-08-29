@@ -1,194 +1,74 @@
+import plotly.graph_objs as go
+import plotly.figure_factory as ff
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.interpolate import griddata
-from MOTorNOT.parameters import plot_params
-from matplotlib import colors
 
-def subplots(func, numpoints = 100, label = None, units = None, scale = 1):
-    fig, ax = plt.subplots(1, 3)
-    fig.set_figheight(5)
-    fig.set_figwidth(20)
-    # for axis in [0, 1, 2]:
-        # plot_1D(func, axis = axis, numpoints = numpoints**2, ax = ax[0][axis], label = label, units = units, scale=scale)
-    i = 0
-    for plane in ['xy', 'xz', 'yz']:
-        plot_2D(func, plane=plane, numpoints = numpoints, ax = ax[i], label = label, units = units, scale = scale)
-        i += 1
-    plt.show()
+def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=30, quiver=True):
+    ''' Generates a 2D plot of the passed vector function in the given plane. '''
 
-def plot_1D(func, axis = 0, numpoints = 100, ax = None, label = None, units = None, scale = 1):
-    ax_label = ['x', 'y', 'z'][axis]
-    x = np.linspace(plot_params['axlim'][ax_label][0], plot_params['axlim'][ax_label][1], numpoints)
-    X = np.zeros((numpoints, 3))
-    X[:,axis] = x
-    V = np.zeros((numpoints, 3))
+    i = ord(plane[0]) - 120    # ordinate index
+    j = ord(plane[1]) - 120    # abscissa index
 
-    f = func(X,V)
-    if f.shape[0] == 3:
-        f = f.T
-    f = f[:,axis]
-    f *= scale
+    ## set up coordinate arrays
+    xi = np.linspace(limits[0][0], limits[0][1], numpoints)
+    xj = np.linspace(limits[1][0], limits[1][1], numpoints)
 
-    if label is not None:
-        label += r'_%s'%ax_label
-        if units is not None:
-            label +=  ' (%s)'%units
+    ## create meshgrid and convert to coordinate array form for vectorized calculation
+    k = 3-(i+j)             # index of orthogonal axis
+    pairs = np.transpose(np.meshgrid(xi, xj)).reshape(-1,2)
+    X = np.hstack((pairs[:,:k], np.zeros((len(pairs), 1)), pairs[:,k:]))
+    V = np.zeros(X.shape)
 
-    if ax is None:
-        plt.figure()
-        plt.plot(x*1000, f)
-        plt.xlabel('%s (mm)'%ax_label)
-        plt.ylabel(r'$%s$)'%(label))
-    else:
-        ax.plot(x*1000, f)
-        ax.set_xlabel('%s (mm)'%ax_label)
-        ax.set_ylabel(r'$%s$'%(label))
+    ## compute function at coordinates
+    a = func(X, V)
+    agrid = np.linalg.norm(a, axis=1).reshape((numpoints, numpoints)).T
 
-def plot_field(B, coil_axis = 2, plot_axis = 0, numpoints = 30):
-    ax_label = ['x', 'y', 'z'][plot_axis]
-    plt.figure()
-    x = np.linspace(plot_params['axlim'][ax_label][0], plot_params['axlim'][ax_label][1], numpoints)
-    X = np.zeros((numpoints, 3))
-    X[:,plot_axis] = x
-    b = B(X, axis = coil_axis)
+    ## create heatmap for norm of function
+    fig = go.Figure()
+    surf = go.Heatmap(x=xi,
+                      y=xj,
+                      z=agrid,
+                      colorscale="Viridis",
+                      zsmooth='best')
+    if quiver:
+        ## create quiver plot
+        xg = X[:, i].reshape(numpoints, numpoints)
+        yg = X[:, j].reshape(numpoints, numpoints)
+        ax = a[:, i].reshape(numpoints, numpoints)
+        ay = a[:, j].reshape(numpoints, numpoints)
 
-    plt.plot(x*1000, b[plot_axis]*1e4)
-    plt.xlabel('%s (mm)'%ax_label)
-    plt.ylabel('Magnetic field (G)')
+        ax /= ax.max() / 10
+        ay /= ay.max() / 10
 
-def plot_2D(func, plane='xy', numpoints = 100, ax = None, label = None, units = None, scale = 1):
-    ''' choose ordinate/abscissa based on user choice for variable plane '''
-    ordinate = plane[0]
-    abscissa = plane[1]
-    index_dict = {'x':0, 'y':1, 'z':2}
-    ordinate_index = index_dict[ordinate]
-    abscissa_index = index_dict[abscissa]
+        fig = ff.create_quiver(xg, yg, ax, ay, scale=1e-4)
+        fig['data'][0]['line']['color'] = 'rgb(255,255,255)'
 
-    ''' set up coordinate arrays '''
-    ordinate = np.linspace(plot_params['axlim'][ordinate][0], plot_params['axlim'][ordinate][1], numpoints)
-    abscissa = np.linspace(plot_params['axlim'][abscissa][0], plot_params['axlim'][abscissa][1], numpoints)
+    fig.add_trace(surf)
+    fig.update_xaxes(range=[xi.min(), xi.max()])
+    fig.update_yaxes(range=[xj.min(), xj.max()])
 
-    ''' Create meshgrid and convert to coordinate array form for vectorized calculation '''
-    other_index = np.setdiff1d([0,1,2],[ordinate_index,abscissa_index])[0]
-    coordinates = []
-    pairs = np.transpose(np.meshgrid(ordinate,abscissa)).reshape(-1,2)
-    for pair in pairs:
-        coord = [0, 0, 0]
-        coord[ordinate_index] = pair[0]
-        coord[abscissa_index] = pair[1]
-        coord[other_index] = 0
-        coordinates.append(coord)
+    return fig
 
-    X = np.array(coordinates)
+def plot_phase_space_force(func, axis='x', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=30, quiver=True):
+    i = ord(axis) - 120             # 0, 1, or 2 corresponding to x, y, or z
 
-    v = np.zeros(len(coordinates))
-    V = np.array([v, v, v]).T
+    ## set up coordinate arrays
+    x = np.linspace(limits[0][0], limits[0][1], numpoints)
+    v = np.linspace(limits[1][0], limits[1][1], numpoints)
+    pairs = np.transpose(np.meshgrid(x, v)).reshape(-1,2)
+    X = np.zeros((numpoints**2, 3))
+    V = np.zeros((numpoints**2, 3))
+    X[:, i] = pairs[:, 0]
+    V[:, i] = pairs[:, 1]
 
     a = func(X, V)
-    if a.shape[0] == 3:
-        a = a.T
-    a *= scale
+    agrid = a[:, i].reshape(numpoints, numpoints).T
 
-    ''' Create density and stream plots '''
-    X = X[:,[ordinate_index, abscissa_index]]
-    a_total = np.sqrt(a[:,0]**2+a[:,1]**2+a[:,2]**2)
-    ordinate_mesh, abscissa_mesh = np.meshgrid(ordinate, abscissa)
-    agrid = griddata(X, a_total, (ordinate_mesh,abscissa_mesh), method = 'linear')
+    # fig = go.Figure()
+    surf = go.Heatmap(x=x,
+                      y=v,
+                      z=agrid,
+                      colorscale="Viridis")
+    #
+    # fig.add_trace(surf)
 
-    aogrid = griddata(X, a[:,ordinate_index], (ordinate_mesh,abscissa_mesh), method = 'linear')
-    aagrid = griddata(X, a[:,abscissa_index], (ordinate_mesh,abscissa_mesh), method = 'linear')
-    if label is not None:
-        label = '|%s|'%label
-        if units is not None:
-            label += ' (%s)'%units
-    if ax is None:
-        plt.figure()
-        plt.streamplot(ordinate_mesh*1000,abscissa_mesh*1000,aogrid,aagrid, density=2)
-        plot = plt.contourf(ordinate_mesh*1000, abscissa_mesh*1000, agrid, plot_params['contours'], cmap='gist_rainbow')
-        plt.colorbar(plot, label=label)
-        plt.xlim([np.min(ordinate)*1000, np.max(ordinate)*1000])
-        plt.ylim(np.min(abscissa)*1000, np.max(abscissa)*1000)
-        plt.xlabel(plane[0] + ' (mm)')
-        plt.ylabel(plane[1] + ' (mm)')
-
-    else:
-        ax.streamplot(ordinate_mesh*1000,abscissa_mesh*1000,aogrid,aagrid, density=2)
-        plot = ax.contourf(ordinate_mesh*1000, abscissa_mesh*1000, agrid, plot_params['contours'], cmap='gist_rainbow')
-        plt.colorbar(plot, label=label, ax=ax)
-        ax.set_xlim([np.min(ordinate)*1000, np.max(ordinate)*1000])
-        ax.set_ylim(np.min(abscissa)*1000, np.max(abscissa)*1000)
-        ax.set_xlabel(plane[0] + ' (mm)')
-        ax.set_ylabel(plane[1] + ' (mm)')
-
-from scipy.interpolate import griddata
-
-def plot_phase_space_trajectories(x, v, xlim = None, ylim = None):
-    N = int(len(x.columns)/3)
-    if xlim is not None:
-        plt.xlim(xlim)
-    if ylim is not None:
-        plt.ylim(ylim)
-
-    for i in range(N):
-        x0 = x[x.columns[3*i]]
-        vx0 = v[v.columns[3*i]]
-        plt.plot(x0, vx0, '--w')
-        plt.xlabel('x (m)')
-        plt.ylabel('v (m/s)')
-
-def plot_phase_space_force(x, y, color_map='viridis_r', ax = None):
-    ''' Interpolates and plots a cost function sampled at an array of points. It's expected
-        that the passed data fills the bounds of the space. '''
-    x = x.copy()
-    y = y.copy()
-    numpoints = 1000
-    x_highres = np.zeros((numpoints, 2))
-    x_highres[:,0] = np.linspace(x[:,0].min(), x[:,0].max(), numpoints)
-    x_highres[:,1] = np.linspace(x[:,1].min(), x[:,1].max(), numpoints)
-    ordinate_mesh, abscissa_mesh = np.meshgrid(x[:,0], x[:, 1])
-
-
-    ordinate_mesh, abscissa_mesh = np.meshgrid(x_highres[:,0], x_highres[:,1])
-    cost_grid = griddata(x, y, (ordinate_mesh,abscissa_mesh), method='cubic')
-    plot = plt.pcolormesh(ordinate_mesh, abscissa_mesh, cost_grid, cmap=color_map)
-    plt.colorbar().set_label('Force')
-#     plot = plt.contourf(ordinate_mesh, abscissa_mesh, cost_grid, cmap=color_map, levels=30)
-
-def plot_trajectory(df, N = None, axis = 0):
-    ax_label = ['x', 'y', 'z'][axis]
-    ''' Plots the phase-space trajectory of atom n '''
-    n_atoms = int(len(df.columns)/6)
-    if N is None:
-        N = range(n_atoms)
-    else:
-        N = [N]
-
-    fig, ax = plt.subplots(1, 3)
-    fig.set_figheight(5)
-    fig.set_figwidth(20)
-
-    i = 0
-    for n in N:
-        X = np.array([df[df.columns[i]], df[df.columns[i+1]], df[df.columns[i+2]]]).T
-        V = np.array([df[df.columns[3*n_atoms+i]], df[df.columns[3*n_atoms+i+1]], df[df.columns[3*n_atoms+i+2]]]).T
-        ax[0].plot(df.index*1000, X[:,axis]*1000)
-        ax[0].set_ylabel(r'$%s$ (mm)'%ax_label)
-        ax[0].set_xlabel(r'$t$ (ms)')
-        ax[0].set_ylim([-1000*np.abs(X[0,axis]),1000*np.abs(X[0,axis])])
-
-        ax[1].plot(df.index*1000, V[:,axis])
-        ax[1].set_ylabel(r'$v_%s$ (m/s)'%ax_label)
-        ax[1].set_xlabel(r'$t$ (ms)')
-        ax[1].set_ylim([-np.abs(V[0,axis]),np.abs(V[0,axis])])
-
-        ax[2].plot(1000*X[:,axis], V[:,axis])
-        ax[2].set_xlabel(r'$%s$ (mm)'%ax_label)
-        ax[2].set_ylabel(r'$v_%s$ (m/s)'%ax_label)
-        ax[2].set_xlim([-1000*np.abs(X[0,axis]),1000*np.abs(X[0,axis])])
-        ax[2].set_ylim([-np.abs(V[0,axis]),np.abs(V[0,axis])])
-        i += 3
-
-    vx = df[[x for x in df.columns if 'vx' in x]]
-    vmin = vx.iloc[0].min()
-    vmax = vx.iloc[0].max()
-    fig.suptitle('Capture velocity range: %.1f-%.1f m/s'%(vmin, vmax))
+    return surf
