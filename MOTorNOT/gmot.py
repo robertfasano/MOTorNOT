@@ -1,6 +1,7 @@
 import numpy as np
-from MOTorNOT.parameters import constants, atom, plot_params
+from MOTorNOT.parameters import atom, plot_params
 from MOTorNOT.beams import Beam, GaussianBeam
+from scipy.constants import hbar
 
 class gratingMOT():
     def __init__(self, params, show_incident = True, show_positive = True, show_negative = True, beam_type = 'uniform'):
@@ -63,7 +64,7 @@ class gratingMOT():
         betaT = self.total_intensity(X)/atom['Isat']
         b = self.field(X)
         for beam in self.beams:
-            force += constants['hbar']* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
+            force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
         return force
 
     def plot(self):
@@ -132,7 +133,7 @@ class diffractedBeam():
         eta = self.eta(b)
         for mF in [-1, 0, 1]:
             amplitude = eta.T[mF+1]
-            denominator = (1+betaT+4/atom['gamma']**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['mu']*np.linalg.norm(b,axis=1)/constants['hbar'])**2)
+            denominator = (1+betaT+4/atom['gamma']**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['mu']*np.linalg.norm(b,axis=1)/hbar)**2)
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate

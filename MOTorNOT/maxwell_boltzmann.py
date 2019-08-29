@@ -1,13 +1,14 @@
 import numpy as np
-from MOTorNOT.parameters import constants, atom
+from MOTorNOT.parameters import atom
 from scipy.integrate import quad
+from scipy.constants import k
 
 ''' Atomic initial conditions '''
 def maxwell_boltzmann(v, T):
-    return np.sqrt((atom['m']/(2*np.pi*constants['kB']*T))**3)*4*np.pi*v**2*np.exp(-atom['m']*v**2/(2*constants['kB']*T))
+    return np.sqrt((atom['m']/(2*np.pi*k*T))**3)*4*np.pi*v**2*np.exp(-atom['m']*v**2/(2*k*T))
 
 def trapping_fraction(vmin, vmax, T):
-    v0 = np.sqrt(8*constants['kB']*T/np.pi/atom['m'])
+    v0 = np.sqrt(8*k*T/np.pi/atom['m'])
     v = np.linspace(0, 100, 1000)
     efficiency = quad(maxwell_boltzmann, vmin, vmax, args=(T))[0]*1e6    # in ppm
     return efficiency
@@ -15,10 +16,10 @@ def trapping_fraction(vmin, vmax, T):
 def generate_maxwell_boltzmann(T, N, vmax = None):
     ''' Rejection sampling routine to generate a Maxwell-Boltzmann distribution at temperature T.'''
     v = []
-    vmean = np.sqrt(8*constants['kB']*T/np.pi/atom['m'])
+    vmean = np.sqrt(8*k*T/np.pi/atom['m'])
     if vmax == None:
-        vmax = vmean+5*np.sqrt(constants['kB']*T/atom['m'])
-    vprob = np.sqrt(2*constants['kB']*T/atom['m'])
+        vmax = vmean+5*np.sqrt(k*T/atom['m'])
+    vprob = np.sqrt(2*k*T/atom['m'])
     pmax = maxwell_boltzmann(vprob, T)
 
 

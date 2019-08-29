@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import ellipeinc, ellipk
-from MOTorNOT.parameters import constants, plot_params
-
+from MOTorNOT.parameters import plot_params
+from scipy.constants import mu_0
 def assembleCoil(wire_diameter, turns, R, Z0, I, axis):
     coils = []
     for t in range(turns):
@@ -82,7 +82,7 @@ class Coil():
         E_integral = ellipeinc(np.pi/2, m)
         K_integral = ellipk(m)
 
-        prefactor = constants['mu0']*self.N*self.I/(2*np.pi*self.R*Q)
+        prefactor = mu_0*self.N*self.I/(2*np.pi*self.R*Q)
         transverse_part = gamma*((1+alpha**2+beta**2)/(Q-4*alpha)*E_integral-K_integral)
         axial_part = ((1-alpha**2-beta**2)/(Q-4*alpha)*E_integral+K_integral)
 

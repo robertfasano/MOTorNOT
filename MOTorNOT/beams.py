@@ -1,5 +1,6 @@
 import numpy as np
-from MOTorNOT.parameters import constants, atom, plot_params
+from MOTorNOT.parameters import atom, plot_params
+from scipy.constants import hbar
 
 class Beam():
     def __init__(self, wavevector, power, radius, detuning, handedness, origin = np.array([0,0,0])):
@@ -66,7 +67,7 @@ class Beam():
         eta = self.eta(b)
         for mF in [-1, 0, 1]:
             amplitude = eta.T[mF+1]
-            denominator = (1+betaT+4/atom['gamma']**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['mu']*np.linalg.norm(b,axis=1)/constants['hbar'])**2)
+            denominator = (1+betaT+4/atom['gamma']**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['mu']*np.linalg.norm(b,axis=1)/hbar)**2)
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
@@ -99,7 +100,7 @@ class Beams():
         ''' Simulate random momentum kicks from all beams summed over a duration. Since the duration may be slower
             than the scattering rate, we exploit scale invariance to reduce the timestep by a factor and the step
             size by the square root of the same factor.'''
-        diffusion_constant = (constants['hbar']*k)**2 * self.scattering_rate(X,V)
+        diffusion_constant = (hbar*k)**2 * self.scattering_rate(X,V)
         num_steps = 1000
         target_step_time = duration / num_steps
         step_size = np.sqrt(diffusion_constant*target_step_time)
@@ -114,7 +115,7 @@ class Beams():
         ''' Simulate random momentum kicks from all beams summed over a duration. Since the duration may be slower
             than the scattering rate, we exploit scale invariance to reduce the timestep by a factor and the step
             size by the square root of the same factor.'''
-        diffusion_constant = (constants['hbar']*k)**2 * self.scattering_rate(X,V)
+        diffusion_constant = (hbar*k)**2 * self.scattering_rate(X,V)
         num_steps = 1000
         target_step_time = duration / num_steps
         step_size = np.sqrt(diffusion_constant*target_step_time)
@@ -139,7 +140,7 @@ class Beams():
         betaT = self.total_intensity(X)/atom['Isat']
         b = self.field(X)
         for beam in self.beams:
-            force += constants['hbar']* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
+            force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
         return force
 
     def plot(self):
