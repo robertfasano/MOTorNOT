@@ -28,25 +28,12 @@ class Beam():
         self.beta = self.I / Isat
         self.origin = origin
 
-        ''' Form a pair of vectors orthogonal to the wavevector '''
-        r = np.array([1,1,1])
-        self.orth1 = r-np.outer(np.dot(self.direction, r), self.direction)[0]
-        self.orth1 = np.array([1,0,0])
-        self.orth2 = np.cross(self.direction, self.orth1)
 
-        self.orth1 = self.orth1 / np.linalg.norm(self.orth1)
-        self.orth2 = self.orth2 /  np.linalg.norm(self.orth2)
 
     def exists_at(self, X):
         ''' A boolean check for whether or not the beam exists at position X. Only works for beams along the x, y, or z axes; arbitrary directions will be supported later. Also assumes that the beam passes through the origin. '''
         X0 = X-self.origin
-        return np.logical_and(np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1) < self.radius, self.angular_inequality(X0))
-
-
-    def angular_inequality(self, X):
-        phi = np.mod(np.arctan2(np.dot(X, self.orth2), np.dot(X, self.orth1)),2*np.pi)
-        return True
-#        return np.logical_and(0 < phi, phi < 2*np.pi)
+        return np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1) < self.radius
 
     def eta(self, b):
         xi = 0
