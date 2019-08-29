@@ -26,6 +26,13 @@ class Coils():
         from MOTorNOT.plotting import subplots
         subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
 
+class QuadrupoleCoils(Coils):
+    def __init__(self, radius, offset, turns, current, axis):
+        ''' Creates a pair of coils with equal and opposite offsets and currents. '''
+        coil1 = Coil(radius, offset, turns, current, axis)
+        coil2 = Coil(radius, -offset, turns, -current, axis)
+        super().__init__([coil1, coil2])
+
 class Coil():
     def __init__(self, radius, offset, turns, current, axis):
         ''' Creates a virtual coil.
