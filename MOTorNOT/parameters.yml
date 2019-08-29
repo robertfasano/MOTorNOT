@@ -1,0 +1,6 @@
+atom:
+  mass: 171          # mass in amu
+  gamma: 29e6        # linewidth divided by 2pi in Hz
+  wavelength: 399    # wavelength of transition in nm
+  gF: 1              # g-factor of transition
+  Isat: 60          # saturation intensity in mW/cm^2

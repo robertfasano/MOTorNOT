@@ -1,26 +1,31 @@
 import numpy as np
-from MOTorNOT.parameters import atom, plot_params
-from scipy.constants import hbar
+from scipy.constants import hbar, physical_constants
+mu_B = physical_constants['Bohr magneton'][0]
+amu = physical_constants['atomic mass constant'][0]
+from MOTorNOT import load_parameters
+atom = load_parameters()['atom']
+Isat = atom['Isat'] * 10   # convert from mW/cm^2 to W/cm^2
 
 class Beam():
-    def __init__(self, wavevector, power, radius, detuning, handedness, origin = np.array([0,0,0])):
+    def __init__(self, direction, power, radius, detuning, handedness, origin = np.array([0,0,0])):
         ''' Creates a virtual laser beam.
             Args:
-                wavevector (array-like): the 3D wavevector of the beam
+                direction (array-like): a unit vector representing the beam's direction
                 power (float)
                 radius (float): radius of the beam. Beams are currently treated as uniform intensity within the radius.
                 detuning (float)
                 handedness (float): +/- 1 for circular polarization.
         '''
-        self.wavevector = wavevector
+        self.direction = direction
+        wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
+        self.wavevector = direction*wavenumber
         self.power = power
         self.radius = radius
         self.detuning = detuning
         self.handedness = handedness
 
-        self.direction = self.wavevector / np.linalg.norm(self.wavevector)
         self.I = self.power/np.pi/self.radius**2
-        self.beta = self.I / atom['Isat']
+        self.beta = self.I / Isat
         self.origin = origin
 
         ''' Form a pair of vectors orthogonal to the wavevector '''
@@ -62,12 +67,13 @@ class Beam():
         return self.exists_at(X) * self.I
 
     def scattering_rate(self, X, V, b, betaT):
-        prefactor = atom['gamma']/2 * self.intensity(X)/atom['Isat']
+        linewidth = 2*np.pi*atom['gamma']
+        prefactor = linewidth/2 * self.intensity(X)/Isat
         summand = 0
         eta = self.eta(b)
         for mF in [-1, 0, 1]:
             amplitude = eta.T[mF+1]
-            denominator = (1+betaT+4/atom['gamma']**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['mu']*np.linalg.norm(b,axis=1)/hbar)**2)
+            denominator = (1+betaT+4/linewidth**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['gF']*mu_B*np.linalg.norm(b,axis=1)/hbar)**2)
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
@@ -88,7 +94,8 @@ class Beams():
         self.field = field
 
     def acceleration(self, X, V):
-        return self.force(X,V)/atom['m']
+        mass = atom['mass'] * amu
+        return self.force(X,V)/mass
 
     def total_intensity(self, X):
         It = 0
@@ -137,7 +144,7 @@ class Beams():
 
     def force(self, X, V):
         force = np.atleast_2d(np.zeros(X.shape))
-        betaT = self.total_intensity(X)/atom['Isat']
+        betaT = self.total_intensity(X)/Isat
         b = self.field(X)
         for beam in self.beams:
             force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)

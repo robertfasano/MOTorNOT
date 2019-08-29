@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
-from MOTorNOT.parameters import atom
 import sys
 import time
 from scipy.integrate import solve_ivp, odeint
 import matplotlib.pyplot as plt
-import sdeint
+from scipy.constants import physical_constants
+amu = physical_constants['atomic mass constant'][0]
+from MOTorNOT import load_parameters
+atom = load_parameters['atom']
 
 class Atoms():
     def __init__(self, X0, V0):
@@ -26,7 +28,8 @@ class Solver():
         self.dt = dt
 
     def acceleration(self, X, V):
-        return self.force(X, V)/atom['m']
+        mass = atom['mass'] * amu
+        return self.force(X, V)
 
     def dydt(self, t, y):
         ''' Args:

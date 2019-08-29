@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.special import ellipeinc, ellipk
-from MOTorNOT.parameters import plot_params
 from scipy.constants import mu_0
 def assembleCoil(wire_diameter, turns, R, Z0, I, axis):
     coils = []

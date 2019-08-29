@@ -1,7 +1,12 @@
 import numpy as np
-from MOTorNOT.parameters import atom, plot_params
 from MOTorNOT.beams import Beam, GaussianBeam
 from scipy.constants import hbar
+from MOTorNOT import load_parameters
+from scipy.constants import hbar, physical_constants
+mu_B = physical_constants['Bohr magneton'][0]
+amu = physical_constants['atomic mass constant'][0]
+atom = load_parameters()['atom']
+Isat = atom['Isat'] * 10   # convert from mW/cm^2 to W/cm^2
 
 class gratingMOT():
     def __init__(self, params, show_incident = True, show_positive = True, show_negative = True, beam_type = 'uniform'):
@@ -31,8 +36,9 @@ class gratingMOT():
         if show_negative:
             for n in [-1, -2, -3]:
                 self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position, beam_type=beam_type))
+        wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
         if show_incident:
-            beam_params = {'wavevector': atom['k']*np.array([0,0,-1]),
+            beam_params = {'wavevector': wavenumber*np.array([0,0,-1]),
                                     'power': power,
                                     'radius': radius,
                                     'detuning': detuning,
@@ -45,7 +51,8 @@ class gratingMOT():
 
 
     def acceleration(self, X, V):
-        return self.force(X,V)/atom['m']
+        mass = atom['mass'] * amu
+        return self.force(X,V)/mass
 
     def overlap(self, X):
         overlap = True
@@ -61,7 +68,7 @@ class gratingMOT():
 
     def force(self, X, V):
         force = np.atleast_2d(np.zeros(X.shape))
-        betaT = self.total_intensity(X)/atom['Isat']
+        betaT = self.total_intensity(X)/Isat
         b = self.field(X)
         for beam in self.beams:
             force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
@@ -76,14 +83,15 @@ class diffractedBeam():
         self.beam_type = beam_type
         self.n = n
         self.phi = np.pi/3*(4*np.abs(n)-5)
-        self.wavevector = atom['k']*np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha), np.sign(n)*np.sin(self.phi)*np.sin(alpha), np.cos(alpha)])
+        wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
+        self.wavevector = wavenumber*np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha), np.sign(n)*np.sin(self.phi)*np.sin(alpha), np.cos(alpha)])
         self.power = power
         self.radius = radius
         self.detuning = detuning
         self.handedness = handedness
         self.alpha = alpha     # diffraction angle
         self.I = power/np.pi/radius**2
-        self.beta = self.I / atom['Isat']
+        self.beta = self.I / Isat
         self.z0 = -position
 
     def exists_at(self, X):
@@ -125,15 +133,16 @@ class diffractedBeam():
         return self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality
 
     def scattering_rate(self, X, V, b, betaT):
+        linewidth = 2*np.pi*atom['gamma']
         if self.beam_type == 'gaussian':
-            prefactor = atom['gamma']/2 * self.intensity(X)/atom['Isat']
+            prefactor = linewidth/2 * self.intensity(X)/Isat
         else:
-            prefactor = atom['gamma']/2 * self.exists_at(X)*self.beta
+            prefactor = linewidth/2 * self.exists_at(X)*self.beta
         summand = 0
         eta = self.eta(b)
         for mF in [-1, 0, 1]:
             amplitude = eta.T[mF+1]
-            denominator = (1+betaT+4/atom['gamma']**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['mu']*np.linalg.norm(b,axis=1)/hbar)**2)
+            denominator = (1+betaT+4/linewidth**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['gF']*muB*np.linalg.norm(b,axis=1)/hbar)**2)
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
