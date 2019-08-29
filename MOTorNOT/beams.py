@@ -151,8 +151,30 @@ class Beams():
         return force
 
     def plot(self):
-        from MOTorNOT.plotting import subplots
-        subplots(self.acceleration, numpoints=plot_params['numpoints'], label='a', units = r'm/s^2')
+        from MOTorNOT.plotting import plot_2D
+        plot_2D(self.force, numpoints=30, quiver=True)
+
+class SixBeamMOT(Beams):
+    def __init__(self, power, radius, detuning, handedness, field):
+        beams = []
+        directions = [[-1, 0, 0], [1, 0, 0], [0, 1, 0], [0, -1, 0]]
+        for d in directions:
+            beam = Beam(direction = np.array(d),
+                        power = power,
+                        radius = radius,
+                        detuning = detuning,
+                        handedness = handedness)
+            beams.append(beam)
+
+        directions = [[0, 0, 1], [0, 0, -1]]
+        for d in directions:
+            beam = Beam(direction = np.array(d),
+                        power = power,
+                        radius = radius,
+                        detuning = detuning,
+                        handedness = -handedness)
+            beams.append(beam)
+        super().__init__(beams, field=field)
 
 def prepare_slowing_beam(beams = [], axis = 0, origin = np.array([0,0,0])):
     vec = k*np.array([0,0,0])
