@@ -2,19 +2,20 @@ import numpy as np
 from MOTorNOT.parameters import constants, atom, plot_params
 
 class Beam():
-    def __init__(self, params, origin = np.array([0,0,0])):
-        ''' Creates a virtual laser beam. Params dict should contain the following fields:
+    def __init__(self, wavevector, power, radius, detuning, handedness, origin = np.array([0,0,0])):
+        ''' Creates a virtual laser beam.
+            Args:
                 wavevector (array-like): the 3D wavevector of the beam
                 power (float)
                 radius (float): radius of the beam. Beams are currently treated as uniform intensity within the radius.
                 detuning (float)
                 handedness (float): +/- 1 for circular polarization.
         '''
-        self.wavevector = params['wavevector']
-        self.power = params['power']
-        self.radius = params['radius']
-        self.detuning = params['detuning']
-        self.handedness = params['handedness']
+        self.wavevector = wavevector
+        self.power = power
+        self.radius = radius
+        self.detuning = detuning
+        self.handedness = handedness
 
         self.direction = self.wavevector / np.linalg.norm(self.wavevector)
         self.I = self.power/np.pi/self.radius**2
