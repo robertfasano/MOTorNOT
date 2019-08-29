@@ -12,5 +12,4 @@ setup(
     packages=find_packages('myproject'),
     license='MIT',
     long_description=open('README.md').read(),
-    install_requires=['ipython', 'matplotlib', 'pandas', 'scipy']
 )
