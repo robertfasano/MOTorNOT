@@ -130,6 +130,8 @@ class Beams():
         return rate
 
     def force(self, X, V):
+        X = np.atleast_2d(X)
+        V = np.atleast_2d(V)
         force = np.atleast_2d(np.zeros(X.shape))
         betaT = self.total_intensity(X)/Isat
         b = self.field(X)
