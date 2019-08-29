@@ -14,6 +14,34 @@ class Atom:
         self.v = pd.DataFrame(V, columns=['vx', 'vy', 'vz'], index=t)
         self.v.index.rename('t', inplace=True)
 
+def generate_initial_conditions(x0, v0, theta=0, phi=0):
+    ''' Generates atomic positions and velocities along the z
+        axis, then rotates to the spherical coordinates theta and
+        phi.
+    '''
+    theta *= np.pi/180
+    phi *= np.pi/180
+
+    lenx = 0
+    if hasattr(x0, '__len__'):
+        lenx = len(x0)
+    lenv = 0
+    if hasattr(v0, '__len__'):
+        lenv = len(v0)
+
+    length = np.maximum(lenx, lenv)
+
+    X = np.zeros((length, 3))
+    X[:, 2] = x0
+
+    V = np.zeros((length, 3))
+    V[:, 2] = v0
+
+    Rx = np.array([[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]])
+    Rz = np.array([[np.cos(phi), -np.sin(phi), 0], [np.sin(phi), np.cos(phi), 0], [0, 0, 1]])
+    X = X.dot(Rx).dot(Rz)
+    V = V.dot(Rx).dot(Rz)
+    return X, V
 
 class Solver():
     def __init__(self, X0, V0, force, duration, dt=None):
@@ -59,7 +87,6 @@ class Solver():
         t = r.t
         y = r.y
         N = int(len(y)/6)
-
 
         # return in pandas dataframes
         atoms = []
