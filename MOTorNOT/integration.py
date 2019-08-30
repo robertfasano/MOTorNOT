@@ -1,18 +1,11 @@
 import numpy as np
 import pandas as pd
+import attr 
 from scipy.integrate import solve_ivp
 from scipy.constants import physical_constants
 amu = physical_constants['atomic mass constant'][0]
 from MOTorNOT import load_parameters
 atom = load_parameters()['atom']
-
-class Atom:
-    def __init__(self, X, V, t):
-        self.x = pd.DataFrame(X, columns=['x', 'y', 'z'], index=t)
-        self.x.index.rename('t', inplace=True)
-
-        self.v = pd.DataFrame(V, columns=['vx', 'vy', 'vz'], index=t)
-        self.v.index.rename('t', inplace=True)
 
 def generate_initial_conditions(x0, v0, theta=0, phi=0):
     ''' Generates atomic positions and velocities along the z
@@ -44,9 +37,12 @@ def generate_initial_conditions(x0, v0, theta=0, phi=0):
     return X, V
 
 from MOTorNOT.analysis import *
+
+@attr.s
 class Solver:
-    def __init__(self, acceleration, X0, V0):
-        self.acceleration, self.X0, self.V0 = acceleration, X0.copy(), V0.copy()
+    acceleration = attr.ib()
+    X0 = attr.ib(converter=np.atleast_2d)
+    V0 = attr.ib(converter=np.atleast_2d)
 
     def run(self, duration, dt=None):
         self.y, self.X, self.V, self.t = solve(self.acceleration,

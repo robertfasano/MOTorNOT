@@ -1,4 +1,5 @@
 import numpy as np
+import attr
 from scipy.special import ellipeinc, ellipk
 from scipy.constants import mu_0
 def assembleCoil(wire_diameter, turns, R, Z0, I, axis):
@@ -8,9 +9,9 @@ def assembleCoil(wire_diameter, turns, R, Z0, I, axis):
         Z0 += np.sign(Z0)*wire_diameter
     return Coils(coils)
 
+@attr.s
 class Coils():
-    def __init__(self, coils):
-        self.coils = coils
+    coils = attr.ib(default=[])
 
     def append(self, coil):
         self.coils.append(coil)
@@ -33,29 +34,28 @@ class QuadrupoleCoils(Coils):
         coil2 = Coil(radius, -offset, turns, -current, axis)
         super().__init__([coil1, coil2])
 
+@attr.s
 class Coil():
-    def __init__(self, radius, offset, turns, current, axis):
-        ''' Creates a virtual coil.
-            Args:
-                radius (float): coil radius
-                offset (float): offset from the origin in mm
-                turns (int): number of turns
-                current (float): current
-                axis (int): 0, 1, or 2 to point the coil along the x, y, or z axis
-        '''
-        self.R = radius
-        self.Z0 = offset
-        self.N = turns
-        self.I = current
-        self.axis = axis
-
+    ''' Creates a virtual coil.
+        Args:
+            radius (float): coil radius
+            offset (float): offset from the origin in mm
+            turns (int): number of turns
+            current (float): current
+            axis (int): 0, 1, or 2 to point the coil along the x, y, or z axis
+    '''
+    radius = attr.ib(converter=float)
+    offset = attr.ib(converter=float)
+    turns = attr.ib(converter=float)
+    current = attr.ib(converter=float)
+    axis = attr.ib(converter=int)
 
     def power(self, d):
         ''' Returns the power required to operate this coil as a function of the diameter d '''
-        length = 2*np.pi*self.R*self.N
+        length = 2*np.pi*self.radius*self.turns
         resistivity = 1.68e-8
         resistance = resistivity*length/np.pi/(d/2)**2
-        return np.abs(self.I)**2*resistance
+        return np.abs(self.current)**2*resistance
 
     def field(self, X, V = None):
         ''' Numerically evaluates the field for a coil placed a distance self.Z0 from the origin along the axis of choice. Axes other than z are
@@ -75,20 +75,19 @@ class Coil():
         r = np.sqrt(x**2+y**2)
 
         field = np.zeros(X.shape)
-        alpha=r/self.R
-        beta=(z-self.Z0)/self.R
+        alpha=r/self.radius
+        beta=(z-self.offset)/self.radius
         Q=(1+alpha)**2+beta**2
         m=4*alpha/Q
 
         gamma = np.zeros(X.shape[0])
         nonzero_indices = np.where(r != 0)[0]
-        gamma[nonzero_indices] = (z[nonzero_indices]-self.Z0)/r[nonzero_indices]
-
+        gamma[nonzero_indices] = (z[nonzero_indices]-self.offset)/r[nonzero_indices]
 
         E_integral = ellipeinc(np.pi/2, m)
         K_integral = ellipk(m)
 
-        prefactor = mu_0*self.N*self.I/(2*np.pi*self.R*Q)
+        prefactor = mu_0*self.turns*self.current/(2*np.pi*self.radius*Q)
         transverse_part = gamma*((1+alpha**2+beta**2)/(Q-4*alpha)*E_integral-K_integral)
         axial_part = ((1-alpha**2-beta**2)/(Q-4*alpha)*E_integral+K_integral)
 
@@ -110,7 +109,3 @@ class Coil():
             Rx = np.array([[1,0,0],[0,0,1], [0,-1,0]])
             return np.dot(Rx,field.T).T
         return field
-
-    def plot(self):
-        from MOTorNOT.plotting import subplots
-        subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
