@@ -15,7 +15,8 @@ def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
         xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=r'${}$'.format(axis))),
         yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=r'$v_{}$'.format(axis)))
         )
-
+    fig.update_xaxes(range=[X[:, :, i].min(), X[:, :, i].max()])
+    fig.update_yaxes(range=[V[:, :, i].min(), V[:, :, i].max()])
     fig.show()
 
 
@@ -33,4 +34,6 @@ def plot_trajectories(acceleration, X, t, plane='xy'):
         xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=r'${}$'.format(plane[0]))),
         yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=r'${}$'.format(plane[1])))
         )
+    fig.update_xaxes(range=[x.min(), x.max()])
+    fig.update_yaxes(range=[y.min(), y.max()])
     fig.show()
