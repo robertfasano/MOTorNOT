@@ -9,6 +9,8 @@ def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
     traces = [surf]
     for p in range(X.shape[1]):
         traces.append(go.Scatter(x=X[:, p, i], y=V[:, p, i], line=dict(color='#ffffff')))
+        traces.append(go.Scatter(x=[X[-1, p, i]], y=[V[-1, p, i]]))
+
     fig = go.Figure(traces)
     fig.update_layout(showlegend=False)
     fig.update_layout(
