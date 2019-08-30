@@ -12,7 +12,7 @@ class gratingMOT():
     def __init__(self, position, alpha, detuning, radius, power, handedness, R1, field, beam_type = 'uniform'):
         ''' Creates a virtual laser beam. Params dict should contain the following fields:
                 position (float): grating offset from z=0
-                alpha (float): diffraction angle
+                alpha (float): diffraction angle in degrees
                 radius (float): radius of incident beam
                 detuning (float): detuning of incident beam
                 field (method): function returning the magnetic field at a position vector X
@@ -21,15 +21,14 @@ class gratingMOT():
                 R1 (float): diffraction efficiency
         '''
         self.field = field
-
+        alpha *= np.pi/180
         self.beams = []
         for n in [1,2,3]:
             self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type))
         for n in [-1, -2, -3]:
             self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type))
-        wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
 
-        beam_params = {'wavevector': wavenumber*np.array([0,0,-1]),
+        beam_params = {'direction': np.array([0,0,-1]),
                                 'power': power,
                                 'radius': radius,
                                 'detuning': detuning,
@@ -39,11 +38,8 @@ class gratingMOT():
         elif beam_type == 'gaussian':
             self.beams.append(GaussianBeam(**beam_params))
 
-
-
     def acceleration(self, X, V):
-        mass = atom['mass'] * amu
-        return self.force(X,V)/mass
+        return self.force(X,V)/(atom['mass'] * amu)
 
     def overlap(self, X):
         overlap = True
@@ -61,17 +57,27 @@ class gratingMOT():
         force = np.atleast_2d(np.zeros(X.shape))
         betaT = self.total_intensity(X)/Isat
         b = self.field(X)
+        wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
         for beam in self.beams:
-            force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
+            wavevector = wavenumber * beam.direction
+            force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), wavevector)
         return force
+
+
+    def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50):
+        from MOTorNOT.plotting import plot_2D
+        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True)
+        fig.show()
 
 class diffractedBeam():
     def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform'):
         self.beam_type = beam_type
         self.n = n
         self.phi = np.pi/3*(4*np.abs(n)-5)
-        wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
-        self.wavevector = wavenumber*np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha), np.sign(n)*np.sin(self.phi)*np.sin(alpha), np.cos(alpha)])
+        self.direction = np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha),
+                                   np.sign(n)*np.sin(self.phi)*np.sin(alpha),
+                                   np.cos(alpha)])
+
         self.power = power
         self.radius = radius
         self.detuning = detuning
@@ -82,8 +88,8 @@ class diffractedBeam():
         self.z0 = -position
 
     def exists_at(self, X):
-        x = X.T[0] - self.wavevector[0]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
-        y = X.T[1] - self.wavevector[1]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
+        x = X.T[0] - self.direction[0] * (X.T[2]-self.z0)/np.cos(self.alpha)
+        y = X.T[1] - self.direction[1] * (X.T[2]-self.z0)/np.cos(self.alpha)
         r = np.sqrt(x**2+y**2)
         phi = np.mod(np.arctan2(y, x),2*np.pi)
 
@@ -92,24 +98,24 @@ class diffractedBeam():
         vertical_inequality = (X.T[2]-self.z0) > 0
         return radial_inequality & angular_inequality & vertical_inequality
 
-    def eta(self, b):
-        xi = 0
-        b = b.copy().T
-        if np.linalg.norm(b) != 0:
-            khat = self.wavevector/np.linalg.norm(self.wavevector)
-            Bhat = (b/np.linalg.norm(b,axis=0)).T
-            khat = np.stack([khat]*Bhat.shape[0])
-            xi = (khat*Bhat).sum(1)
-        eta = {}
-        eta[0]=(1-xi**2)/2
-        eta[-1] = (1+self.handedness*xi)**2/4
-        eta[1] = (1-self.handedness*xi)**2/4
-
-        return np.array([eta[-1], eta[0], eta[1]]).T
+    @staticmethod
+    def eta(b, khat, s):
+        ''' Transition amplitude to states [-1, 0, 1].
+            Args:
+                b (ndarray): magnetic field, shape (N,3) array
+                khat (ndarray): beam unit vector
+                s (float): polarization handedness
+        '''
+        bT = b.T
+        bnorm = np.linalg.norm(bT, axis=0)
+        # Bhat = np.divide(bT, bnorm, where=bnorm!=0)
+        Bhat = (bT/bnorm)
+        xi = khat.dot(Bhat)
+        return np.array([(1+s*xi)**2/4, (1-xi**2)/2, (1-s*xi)**2/4]).T
 
     def intensity(self, X):
-        x = X.T[0] - self.wavevector[0]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
-        y = X.T[1] - self.wavevector[1]/np.linalg.norm(self.wavevector) * (X.T[2]-self.z0)/np.cos(self.alpha)
+        x = X.T[0] - self.direction[0] * (X.T[2]-self.z0)/np.cos(self.alpha)
+        y = X.T[1] - self.direction[1] * (X.T[2]-self.z0)/np.cos(self.alpha)
         r = np.sqrt(x**2+y**2)
         phi = np.mod(np.arctan2(y, x),2*np.pi)
 
@@ -126,10 +132,12 @@ class diffractedBeam():
         else:
             prefactor = linewidth/2 * self.exists_at(X)*self.beta
         summand = 0
-        eta = self.eta(b)
+        eta = self.eta(b, self.direction, self.handedness)
         for mF in [-1, 0, 1]:
             amplitude = eta.T[mF+1]
-            denominator = (1+betaT+4/linewidth**2*(self.detuning-np.dot(self.wavevector, V.T)-mF*atom['gF']*muB*np.linalg.norm(b,axis=1)/hbar)**2)
+            wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
+            wavevector = self.direction * wavenumber
+            denominator = (1+betaT+4/linewidth**2*(self.detuning-np.dot(wavevector, V.T)-mF*atom['gF']*mu_B*np.linalg.norm(b,axis=1)/hbar)**2)
             summand += amplitude / denominator
         rate = (prefactor.T*summand).T
         return rate
