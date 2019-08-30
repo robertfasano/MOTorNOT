@@ -2,9 +2,7 @@ import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import numpy as np
 
-def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=30, quiver=True):
-    ''' Generates a 2D plot of the passed vector function in the given plane. '''
-
+def sample_2d(func, plane, limits, numpoints):
     i = ord(plane[0]) - 120    # ordinate index
     j = ord(plane[1]) - 120    # abscissa index
 
@@ -22,6 +20,17 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
     a = func(X, V)
     agrid = np.linalg.norm(a, axis=1).reshape((numpoints, numpoints)).T
 
+    return X, agrid, a
+
+def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True):
+    ''' Generates a 2D plot of the passed vector function in the given plane. '''
+
+    i = ord(plane[0]) - 120    # ordinate index
+    j = ord(plane[1]) - 120    # abscissa index
+
+    X, agrid, a = sample_2d(func, plane, limits, numpoints)
+    xi = np.unique(X[:, i])
+    xj = np.unique(X[:, j])
     ## create heatmap for norm of function
     fig = go.Figure()
     surf = go.Heatmap(x=xi,
@@ -31,18 +40,20 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
                       zsmooth='best',
                       colorbar={'title': 'Acceleration', 'titleside': 'right'})
     if quiver:
+        n = int(numpoints/2)
+        X2, agrid2, a2 = sample_2d(func, plane, limits, n)
         ## create quiver plot
-        xg = X[:, i].reshape(numpoints, numpoints)
-        yg = X[:, j].reshape(numpoints, numpoints)
-        ax = a[:, i].reshape(numpoints, numpoints)
-        ay = a[:, j].reshape(numpoints, numpoints)
+        xg = X2[:, i].reshape(n, n)
+        yg = X2[:, j].reshape(n, n)
+        ax = a2[:, i].reshape(n, n)
+        ay = a2[:, j].reshape(n, n)
 
         if ax.max() != 0:
             ax /= ax.max() / 10
         if ay.max() != 0:
             ay /= ay.max() / 10
         # scale = 1e-4
-        scale = (limits[0][1] - limits[0][0])/500
+        scale = (limits[0][1] - limits[0][0])/500 * (30/numpoints)
         fig = ff.create_quiver(xg, yg, ax, ay, scale=scale)
         fig['data'][0]['line']['color'] = 'rgb(255,255,255)'
 
