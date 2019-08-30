@@ -16,6 +16,6 @@ def rotate(axis, theta):
     elif axis == 1:
         mat = [[c, 0, s], [0, 1, 0], [-s, 0, c]]
     elif axis == 2:
-        mat == [[c, -s, 0], [s, c, 0], 0, 0, 1]
+        mat = [[c, -s, 0], [s, c, 0], [0, 0, 1]]
 
     return np.array(mat)
