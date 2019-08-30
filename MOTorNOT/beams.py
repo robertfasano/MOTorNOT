@@ -105,9 +105,10 @@ class Beams():
             force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), wavenumber * beam.direction)
         return force
 
-    def plot(self):
+    def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)]):
         from MOTorNOT.plotting import plot_2D
-        plot_2D(self.force, numpoints=30, quiver=True)
+        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=30, quiver=True)
+        fig.show()
 
 class SixBeamMOT(Beams):
     def __init__(self, power, radius, detuning, handedness, field):
