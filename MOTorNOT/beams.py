@@ -27,34 +27,41 @@ class Beam():
     def exists_at(self, X):
         ''' A boolean check for whether or not the beam exists at position X. Only works for beams along the x, y, or z axes; arbitrary directions will be supported later. Also assumes that the beam passes through the origin. '''
         X0 = X-self.origin
-        return np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1) < self.radius
+        r = np.linalg.norm(-X0+np.outer(np.dot(X0, self.direction), (self.direction)), axis=1)
+        return r < self.radius
 
-    def eta(self, b):
-        xi = 0
-        b = b.copy().T
-        if np.linalg.norm(b) != 0:
-            khat = self.direction
-            Bhat = (b/np.linalg.norm(b,axis=0)).T
-            khat = np.stack([khat]*Bhat.shape[0])
-            xi = (khat*Bhat).sum(1)
-        eta = {}
-        eta[0]=(1-xi**2)/2
-        eta[-1] = (1+self.handedness*xi)**2/4
-        eta[1] = (1-self.handedness*xi)**2/4
-
-        return np.array([eta[-1], eta[0], eta[1]]).T
+    @staticmethod
+    def eta(b, khat, s):
+        ''' Transition amplitude to states [-1, 0, 1].
+            Args:
+                b (ndarray): magnetic field, shape (N,3) array
+                khat (ndarray): beam unit vector
+                s (float): polarization handedness
+        '''
+        bT = b.T
+        bnorm = np.linalg.norm(bT, axis=0)
+        # Bhat = np.divide(bT, bnorm, where=bnorm!=0)
+        Bhat = (bT/bnorm)
+        xi = khat.dot(Bhat)
+        return np.array([(1+s*xi)**2/4, (1-xi**2)/2, (1-s*xi)**2/4]).T
 
     def intensity(self, X):
-        I = self.power/np.pi/self.radius**2
-        return self.exists_at(X) * I
+        return self.exists_at(X) * self.power/np.pi/self.radius**2
 
     def scattering_rate(self, X, V, b, betaT):
+        ''' The scattering rate of the beam at a given position and velocity.
+            Args:
+                X (ndarray): position array with shape (N, 3)
+                V (ndarray): velocity array with shape (N, 3)
+                b (ndarray): magnetic field evaluated at the position
+                betaT (ndarray): total saturation fraction evaluated at X
+        '''
         linewidth = 2*np.pi*atom['gamma']
         wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
         wavevector = self.direction * wavenumber
         prefactor = linewidth/2 * self.intensity(X)/Isat
         summand = 0
-        eta = self.eta(b)
+        eta = self.eta(b, self.direction, self.handedness)
         for mF in [-1, 0, 1]:
             amplitude = eta.T[mF+1]
             denominator = (1+betaT+4/linewidth**2*(self.detuning-np.dot(wavevector, V.T)-mF*atom['gF']*mu_B*np.linalg.norm(b,axis=1)/hbar)**2)
@@ -79,8 +86,7 @@ class Beams():
     field = attr.ib()
 
     def acceleration(self, X, V):
-        mass = atom['mass'] * amu
-        return self.force(X,V)/mass
+        return self.force(X,V)/(atom['mass'] * amu)
 
     def total_intensity(self, X):
         It = 0
