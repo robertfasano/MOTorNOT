@@ -2,38 +2,35 @@ import numpy as np
 import plotly.graph_objs as go
 from MOTorNOT.plotting import plot_2D, plot_phase_space_force
 
-def atoms_to_arrays(atoms):
-    x = []
-    v = []
-    for atom in atoms:
-        x = np.append(x, atom.x)
-        v = np.append(v, atom.v)
+def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
+    i = ord(axis)-120
 
-    return x, v
-
-def phase_space_trajectories(mot, atoms, axis='x'):
-    xatoms, vatoms = atoms_to_arrays(atoms)
-
-    surf = plot_phase_space_force(mot.acceleration, axis, limits=[(xatoms.min(), xatoms.max()), (1.5*vatoms.min(), 1.5*vatoms.max())], numpoints=100)
-
-
-    index = axis
-    vindex = f'v{index}'
+    surf = plot_phase_space_force(acceleration, axis, limits=[(X.min(), X.max()), (V.min(), V.max())], numpoints=100)
     traces = [surf]
-    for atom in atoms:
-        traces.append(go.Scatter(x=atom.x[index], y=atom.v[vindex], line=dict(color='#ffffff')))
-        traces.append(go.Scatter(x=[atom.x.iloc[-1][index]], y=[atom.v.iloc[-1][vindex]], line=dict(color='#000000')))
+    for p in range(X.shape[1]):
+        traces.append(go.Scatter(x=X[:, p, i], y=V[:, p, i], line=dict(color='#ffffff')))
     fig = go.Figure(traces)
     fig.update_layout(showlegend=False)
+    fig.update_layout(
+        xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=r'${}$'.format(axis))),
+        yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=r'$v_{}$'.format(axis)))
+        )
+
     fig.show()
 
 
-def trajectories(mot, atoms, plane='xy'):
-    fig = plot_2D(mot.acceleration, plane, limits=[(-15e-3, 15e-3), (-15e-3, 15e-3)], numpoints=30)
+def plot_trajectories(acceleration, X, t, plane='xy'):
+    i = ord(plane[0])-120
+    j = ord(plane[1])-120
+    x = X[:, :, i]
+    y = X[:, :, j]
+    fig = plot_2D(acceleration, plane, limits=[(x.min(), x.max()), (y.min(), y.max())], numpoints=30)
 
-    for atom in atoms:
-        fig.add_trace(go.Scatter(x=atom.x[plane[0]], y=atom.x[plane[1]], line=dict(color='#ffffff')))
-        fig.add_trace(go.Scatter(x=[atom.x.iloc[-1][plane[0]]], y=[atom.x.iloc[-1][plane[1]]], line=dict(color='#000000')))
+    for p in range(X.shape[1]):
+        fig.add_trace(go.Scatter(x=x[:, p], y=y[:, p], line=dict(color='#ffffff')))
     fig.update_layout(showlegend=False)
-
+    fig.update_layout(
+        xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=r'${}$'.format(plane[0]))),
+        yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=r'${}$'.format(plane[1])))
+        )
     fig.show()
