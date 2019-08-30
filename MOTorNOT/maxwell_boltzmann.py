@@ -1,6 +1,5 @@
 import numpy as np
 import attr
-from MOTorNOT.parameters import atom
 from scipy.integrate import quad
 from scipy.constants import k
 from scipy.constants import physical_constants
@@ -19,7 +18,7 @@ class MaxwellBoltzmann:
     def cdf(self, vmin, vmax):
         return quad(self.pdf, vmin, vmax)[0]*1e6    # in ppm
 
-    def generate(N, vmax = None):
+    def generate(self, N, vmax = None):
         ''' Rejection sampling routine '''
         v = []
         vmean = np.sqrt(8*k*self.T/np.pi/mass)
