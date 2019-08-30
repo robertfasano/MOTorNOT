@@ -71,11 +71,34 @@ class Solver:
         ''' Returns an array containing the velocities at the ith timestep. '''
         return self.V[i, :, :]
 
-    def plot_trajectory(self, plane='xy'):
-        plot_trajectories(self.acceleration, self.X, self.t, plane=plane)
+    def plot(self, plane='xy'):
+        X = self.X
+        if trapped_only:
+            X = X[:, self.trapped(), :]
+        plot_trajectories(self.acceleration, X, self.t, plane=plane)
 
-    def plot_phase_space(self, axis='x'):
-        plot_phase_space_trajectories(self.acceleration, self.X, self.V, axis=axis)
+    def phase_plot(self, axis='x', trapped_only=False):
+        X = self.X
+        V = self.V
+        if trapped_only:
+            X = X[:, self.trapped(), :]
+            V = V[:, self.trapped(), :]
+
+        plot_phase_space_trajectories(self.acceleration, X, V, axis=axis)
+
+    def capture_velocity(self, rmax=1e-3, vmax=1e-3):
+        vi = self.get_velocity(0)[self.trapped(rmax, vmax)]
+        if len(vi) > 0:
+            return vi.max()
+        else:
+            return 0
+
+    def trapped(self, rmax=1e-3, vmax=1e-3):
+        ''' Return indices of atoms within a phase-space threshold at the end of the simulation '''
+        rf = np.linalg.norm(self.get_position(-1), axis=1)
+        vf = np.linalg.norm(self.get_velocity(-1), axis=1)
+        return np.where(np.logical_and(rf < rmax, vf < vmax))[0]
+
 
 def solve(acceleration, X0, V0, duration, dt=None):
     ''' Integrates the equations of motion given by the specified force,
