@@ -52,6 +52,25 @@ class Solver:
                                        duration, dt=dt)
         return self
 
+    def get_particle(self, i):
+        ''' Returns a DataFrame containing the dynamics of the ith particle. '''
+        df = pd.DataFrame(index = self.t)
+        df['x'] = self.X[:, i, 0]
+        df['y'] = self.X[:, i, 1]
+        df['z'] = self.X[:, i, 2]
+        df['vx'] = self.V[:, i, 0]
+        df['vy'] = self.V[:, i, 1]
+        df['vz'] = self.V[:, i, 2]
+        return df
+
+    def get_position(self, i):
+        ''' Returns an array containing the positions at the ith timestep. '''
+        return self.X[i, :, :]
+
+    def get_velocity(self, i):
+        ''' Returns an array containing the velocities at the ith timestep. '''
+        return self.V[i, :, :]
+
     def plot_trajectory(self, plane='xy'):
         plot_trajectories(self.acceleration, self.X, self.t, plane=plane)
 
