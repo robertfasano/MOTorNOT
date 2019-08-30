@@ -37,8 +37,10 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
         ax = a[:, i].reshape(numpoints, numpoints)
         ay = a[:, j].reshape(numpoints, numpoints)
 
-        ax /= ax.max() / 10
-        ay /= ay.max() / 10
+        if ax.max() != 0:
+            ax /= ax.max() / 10
+        if ay.max() != 0:
+            ay /= ay.max() / 10
         # scale = 1e-4
         scale = (limits[0][1] - limits[0][0])/500
         fig = ff.create_quiver(xg, yg, ax, ay, scale=scale)
