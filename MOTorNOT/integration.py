@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
-import attr 
+import attr
 from scipy.integrate import solve_ivp
 from scipy.constants import physical_constants
+
 amu = physical_constants['atomic mass constant'][0]
-from MOTorNOT import load_parameters
+from MOTorNOT import load_parameters, rotate
 atom = load_parameters()['atom']
 
 def generate_initial_conditions(x0, v0, theta=0, phi=0):
@@ -30,8 +31,8 @@ def generate_initial_conditions(x0, v0, theta=0, phi=0):
     V = np.zeros((length, 3))
     V[:, 2] = v0
 
-    Rx = np.array([[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]])
-    Rz = np.array([[np.cos(phi), -np.sin(phi), 0], [np.sin(phi), np.cos(phi), 0], [0, 0, 1]])
+    Rx = rotate(0, theta)
+    Rz = rotate(2, phi)
     X = X.dot(Rx).dot(Rz)
     V = V.dot(Rx).dot(Rz)
     return X, V

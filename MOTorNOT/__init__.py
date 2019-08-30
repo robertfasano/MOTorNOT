@@ -6,3 +6,16 @@ def load_parameters():
     with open(path) as file:
         params = yaml.load(file, Loader=yaml.SafeLoader)
     return params
+
+import numpy as np
+def rotate(axis, theta):
+    c, s = np.cos(theta), np.sin(theta)
+
+    if axis == 0:
+        mat = [[1, 0, 0], [0, c, -s], [0, s, c]]
+    elif axis == 1:
+        mat = [[c, 0, s], [0, 1, 0], [-s, 0, c]]
+    elif axis == 2:
+        mat == [[c, -s, 0], [s, c, 0], 0, 0, 1]
+
+    return np.array(mat)

@@ -1,7 +1,9 @@
 import numpy as np
 import attr
+from MOTorNOT import rotate
 from scipy.special import ellipeinc, ellipk
 from scipy.constants import mu_0
+
 def assembleCoil(wire_diameter, turns, R, Z0, I, axis):
     coils = []
     for t in range(turns):
@@ -63,12 +65,10 @@ class Coil():
         X = np.atleast_2d(X)
         if self.axis == 0:
             ''' Apply -90 degree rotation around y '''
-            Ry = np.array([[0,0,-1],[0,1,0], [1,0,0]])
-            X = np.dot(Ry, X.T).T
+            X = np.dot(rotate(1, -np.pi/2), X.T).T
         elif self.axis == 1:
             ''' Apply 90 degree rotation around x '''
-            Rx = np.array([[1,0,0],[0,0,-1], [0,1,0]])
-            X = np.dot(Rx, X.T).T
+            X = np.dot(rotate(0, np.pi/2), X.T).T
         x = X[:,0]
         y = X[:,1]
         z = X[:,2]
@@ -101,11 +101,7 @@ class Coil():
 
         ''' Rotate to correct axis '''
         if self.axis == 0:
-            ''' Apply 90 degree rotation around y '''
-            Ry = np.array([[0,0,1],[0,1,0], [-1,0,0]])
-            return np.dot(Ry,field.T).T
+            return np.dot(rotate(1, np.pi/2), field.T).T
         elif self.axis == 1:
-            ''' Apply -90 degree rotation around x '''
-            Rx = np.array([[1,0,0],[0,0,1], [0,-1,0]])
-            return np.dot(Rx,field.T).T
+            return np.dot(rotate(0, -np.pi/2), field.T).T
         return field
