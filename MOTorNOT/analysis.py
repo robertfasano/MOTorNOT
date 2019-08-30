@@ -5,7 +5,7 @@ from MOTorNOT.plotting import plot_2D, plot_phase_space_force
 def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
     i = ord(axis)-120
 
-    surf = plot_phase_space_force(acceleration, axis, limits=[(X.min(), X.max()), (V.min(), V.max())], numpoints=100)
+    surf = plot_phase_space_force(acceleration, axis, limits=[(X.min(), X.max()), (-V.max(), V.max())], numpoints=100)
     traces = [surf]
     for p in range(X.shape[1]):
         traces.append(go.Scatter(x=X[:, p, i], y=V[:, p, i], line=dict(color='#ffffff')))
@@ -16,7 +16,7 @@ def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
         yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=r'$v_{}$'.format(axis)))
         )
     fig.update_xaxes(range=[X[:, :, i].min(), X[:, :, i].max()])
-    fig.update_yaxes(range=[V[:, :, i].min(), V[:, :, i].max()])
+    fig.update_yaxes(range=[-V[:, :, i].max(), V[:, :, i].max()])
     fig.show()
 
 
