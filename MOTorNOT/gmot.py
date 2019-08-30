@@ -9,7 +9,7 @@ atom = load_parameters()['atom']
 Isat = atom['Isat'] * 10   # convert from mW/cm^2 to W/cm^2
 
 class gratingMOT():
-    def __init__(self, params, show_incident = True, show_positive = True, show_negative = True, beam_type = 'uniform'):
+    def __init__(self, position, alpha, detuning, radius, power, handedness, R1, field, beam_type = 'uniform'):
         ''' Creates a virtual laser beam. Params dict should contain the following fields:
                 position (float): grating offset from z=0
                 alpha (float): diffraction angle
@@ -17,36 +17,27 @@ class gratingMOT():
                 detuning (float): detuning of incident beam
                 field (method): function returning the magnetic field at a position vector X
                 power (float): power of the incident beam
-                polarization (float): +/-1 for circular polarization
+                handedness (float): +/-1 for circular polarization
                 R1 (float): diffraction efficiency
         '''
-        position = params['position']
-        alpha = params['alpha']
-        detuning = params['detuning']
-        radius = params['radius']
-        self.field = params['field']
-        power = params['power']
-        polarization = params['polarization']
-        R1 = params['R1']
+        self.field = field
 
         self.beams = []
-        if show_positive:
-            for n in [1,2,3]:
-                self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position, beam_type=beam_type))
-        if show_negative:
-            for n in [-1, -2, -3]:
-                self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -polarization, position, beam_type=beam_type))
+        for n in [1,2,3]:
+            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type))
+        for n in [-1, -2, -3]:
+            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type))
         wavenumber = 2*np.pi/(atom['wavelength']*1e-9)
-        if show_incident:
-            beam_params = {'wavevector': wavenumber*np.array([0,0,-1]),
-                                    'power': power,
-                                    'radius': radius,
-                                    'detuning': detuning,
-                                    'handedness': polarization}
-            if beam_type == 'uniform':
-                self.beams.append(Beam(beam_params))
-            elif beam_type == 'gaussian':
-                self.beams.append(GaussianBeam(beam_params))
+
+        beam_params = {'wavevector': wavenumber*np.array([0,0,-1]),
+                                'power': power,
+                                'radius': radius,
+                                'detuning': detuning,
+                                'handedness': handedness}
+        if beam_type == 'uniform':
+            self.beams.append(Beam(**beam_params))
+        elif beam_type == 'gaussian':
+            self.beams.append(GaussianBeam(**beam_params))
 
 
 
@@ -73,10 +64,6 @@ class gratingMOT():
         for beam in self.beams:
             force += hbar* np.outer(beam.scattering_rate(X,V, b, betaT), beam.wavevector)
         return force
-
-    def plot(self):
-        from MOTorNOT.plotting import subplots
-        subplots(self.acceleration, numpoints=plot_params['numpoints'], label='a', units = r'm/s^2')
 
 class diffractedBeam():
     def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform'):

@@ -28,7 +28,8 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
                       y=xj,
                       z=agrid,
                       colorscale="Viridis",
-                      zsmooth='best')
+                      zsmooth='best',
+                      colorbar={'title': 'Acceleration', 'titleside': 'right'})
     if quiver:
         ## create quiver plot
         xg = X[:, i].reshape(numpoints, numpoints)
@@ -36,10 +37,13 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
         ax = a[:, i].reshape(numpoints, numpoints)
         ay = a[:, j].reshape(numpoints, numpoints)
 
-        ax /= ax.max() / 10
-        ay /= ay.max() / 10
-
-        fig = ff.create_quiver(xg, yg, ax, ay, scale=1e-4)
+        if ax.max() != 0:
+            ax /= ax.max() / 10
+        if ay.max() != 0:
+            ay /= ay.max() / 10
+        # scale = 1e-4
+        scale = (limits[0][1] - limits[0][0])/500
+        fig = ff.create_quiver(xg, yg, ax, ay, scale=scale)
         fig['data'][0]['line']['color'] = 'rgb(255,255,255)'
 
     fig.add_trace(surf)
@@ -48,7 +52,7 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
 
     return fig
 
-def plot_phase_space_force(func, axis='x', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=30, quiver=True):
+def plot_phase_space_force(func, axis='x', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=30):
     i = ord(axis) - 120             # 0, 1, or 2 corresponding to x, y, or z
 
     ## set up coordinate arrays
@@ -63,12 +67,10 @@ def plot_phase_space_force(func, axis='x', limits=[(-20e-3, 20e-3), (-20e-3, 20e
     a = func(X, V)
     agrid = a[:, i].reshape(numpoints, numpoints).T
 
-    # fig = go.Figure()
     surf = go.Heatmap(x=x,
                       y=v,
                       z=agrid,
-                      colorscale="Viridis")
-    #
-    # fig.add_trace(surf)
+                      colorscale="Viridis",
+                      colorbar={'title': 'Acceleration', 'titleside': 'right'})
 
     return surf

@@ -1,18 +1,12 @@
 import numpy as np
 import pandas as pd
+import attr
 from scipy.integrate import solve_ivp
 from scipy.constants import physical_constants
+
 amu = physical_constants['atomic mass constant'][0]
-from MOTorNOT import load_parameters
+from MOTorNOT import load_parameters, rotate
 atom = load_parameters()['atom']
-
-class Atom:
-    def __init__(self, X, V, t):
-        self.x = pd.DataFrame(X, columns=['x', 'y', 'z'], index=t)
-        self.x.index.rename('t', inplace=True)
-
-        self.v = pd.DataFrame(V, columns=['vx', 'vy', 'vz'], index=t)
-        self.v.index.rename('t', inplace=True)
 
 def generate_initial_conditions(x0, v0, theta=0, phi=0):
     ''' Generates atomic positions and velocities along the z
@@ -37,26 +31,58 @@ def generate_initial_conditions(x0, v0, theta=0, phi=0):
     V = np.zeros((length, 3))
     V[:, 2] = v0
 
-    Rx = np.array([[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]])
-    Rz = np.array([[np.cos(phi), -np.sin(phi), 0], [np.sin(phi), np.cos(phi), 0], [0, 0, 1]])
+    Rx = rotate(0, theta)
+    Rz = rotate(2, phi)
     X = X.dot(Rx).dot(Rz)
     V = V.dot(Rx).dot(Rz)
     return X, V
 
-class Solver():
-    def __init__(self, X0, V0, force, duration, dt=None):
-        self.position = X0.copy()
-        self.velocity = V0.copy()
-        self.force = force
-        self.duration = duration
-        self.last_percent = '0'
-        self.dt = dt
+from MOTorNOT.analysis import *
 
-    def acceleration(self, X, V):
-        mass = atom['mass'] * amu
-        return self.force(X, V)/mass
+@attr.s
+class Solver:
+    acceleration = attr.ib()
+    X0 = attr.ib(converter=np.atleast_2d)
+    V0 = attr.ib(converter=np.atleast_2d)
 
-    def dydt(self, t, y):
+    def run(self, duration, dt=None):
+        self.y, self.X, self.V, self.t = solve(self.acceleration,
+                                       self.X0,
+                                       self.V0,
+                                       duration, dt=dt)
+        return self
+
+    def get_particle(self, i):
+        ''' Returns a DataFrame containing the dynamics of the ith particle. '''
+        df = pd.DataFrame(index = self.t)
+        df['x'] = self.X[:, i, 0]
+        df['y'] = self.X[:, i, 1]
+        df['z'] = self.X[:, i, 2]
+        df['vx'] = self.V[:, i, 0]
+        df['vy'] = self.V[:, i, 1]
+        df['vz'] = self.V[:, i, 2]
+        return df
+
+    def get_position(self, i):
+        ''' Returns an array containing the positions at the ith timestep. '''
+        return self.X[i, :, :]
+
+    def get_velocity(self, i):
+        ''' Returns an array containing the velocities at the ith timestep. '''
+        return self.V[i, :, :]
+
+    def plot_trajectory(self, plane='xy'):
+        plot_trajectories(self.acceleration, self.X, self.t, plane=plane)
+
+    def plot_phase_space(self, axis='x'):
+        plot_phase_space_trajectories(self.acceleration, self.X, self.V, axis=axis)
+
+def solve(acceleration, X0, V0, duration, dt=None):
+    ''' Integrates the equations of motion given by the specified force,
+        starting from given initial conditions.
+    '''
+
+    def dydt(t, y):
         ''' Args:
                 y (array-like): Array of length N where the first N/2 values correspond
                                 to position and the last N/2 to velocity.
@@ -67,33 +93,23 @@ class Solver():
         X = y[0:3*N].reshape(N,3)
         V = y[3*N::].reshape(N,3)
 
-        a = self.acceleration(X, V)
+        a = acceleration(X, V)
 
-        ''' Flatten result to pass back into solver '''
-        a = np.append(V.flatten(), a.flatten())
-        return a
+        return np.append(V.flatten(), a.flatten())
 
-    def solve(self):
-        tspan=(0,self.duration)
-        y0 = np.append(self.position.flatten(), self.velocity.flatten())
-        self.timestep = []
-        self.dv = []
-        if self.dt is not None:
-            t_eval = np.arange(0, self.duration, self.dt)
-            r = solve_ivp(self.dydt, tspan, y0, t_eval=t_eval, vectorized=True, dense_output=True)
-        else:
-            r = solve_ivp(self.dydt, tspan, y0)
+    y0 = np.append(np.array(X0).flatten(), np.array(V0).flatten())
+    if dt is not None:
+        t_eval = np.arange(0, duration, dt)
+        r = solve_ivp(dydt, (0, duration), y0, t_eval=t_eval, vectorized=True)
+    else:
+        r = solve_ivp(dydt, (0, duration), y0, vectorized=True)
 
-        t = r.t
-        y = r.y
-        N = int(len(y)/6)
+    t = r.t
+    y = r.y
+    N = int(len(y)/6)
 
-        # return in pandas dataframes
-        atoms = []
-        for i in range(3*N):
-            if not i % 3:
-                X = np.vstack([y[i], y[i+1], y[i+2]]).T
-                V = np.vstack([y[i+3*N], y[i+1+3*N], y[i+2+3*N]]).T
-                atom = Atom(X, V, t)
-                atoms.append(atom)
-        return atoms
+    X = y[0:3*N, :].T
+    V = y[3*N:6*N, :].T
+    X = X.reshape(-1, N, 3)
+    V = V.reshape(-1, N, 3)
+    return y, X, V, t
