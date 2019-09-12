@@ -30,10 +30,10 @@ class Coils():
         subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
 
 class QuadrupoleCoils(Coils):
-    def __init__(self, radius, offset, turns, current, axis):
+    def __init__(self, radius, offset, turns, current, axis, deltaI=0):
         ''' Creates a pair of coils with equal and opposite offsets and currents. '''
-        coil1 = Coil(radius, offset, turns, current, axis)
-        coil2 = Coil(radius, -offset, turns, -current, axis)
+        coil1 = Coil(radius, offset, turns, current+deltaI/2, axis)
+        coil2 = Coil(radius, -offset, turns, -current+deltaI/2, axis)
         super().__init__([coil1, coil2])
 
 @attr.s
