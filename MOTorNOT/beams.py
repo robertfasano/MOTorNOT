@@ -94,8 +94,11 @@ class Beams():
             It += beam.intensity(X)
         return It
 
-    def scattering_rate(self, X, V):
+    def scattering_rate(self, X, V, i=None):
         rate = 0
+        if i is not None:
+            return self.beams[i].scattering_rate(X, V, self.field(X), self.total_intensity(X))
+            
         for beam in self.beams:
             rate += beam.scattering_rate(X, V, self.field(X), self.total_intensity(X))
         return rate
@@ -113,7 +116,7 @@ class Beams():
 
     def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)]):
         from MOTorNOT.plotting import plot_2D
-        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=30, quiver=True)
+        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=40, quiver=True)
         fig.show()
 
 class SixBeamMOT(Beams):
