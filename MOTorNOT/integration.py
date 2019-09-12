@@ -71,11 +71,11 @@ class Solver:
         ''' Returns an array containing the velocities at the ith timestep. '''
         return self.V[i, :, :]
 
-    def plot(self, plane='xy'):
+    def plot(self, plane='xy', limits=None, trapped_only=False):
         X = self.X
         if trapped_only:
             X = X[:, self.trapped(), :]
-        plot_trajectories(self.acceleration, X, self.t, plane=plane)
+        plot_trajectories(self.acceleration, X, self.t, plane=plane, limits=limits)
 
     def phase_plot(self, axis='x', trapped_only=False):
         X = self.X
