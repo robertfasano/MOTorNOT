@@ -22,12 +22,15 @@ def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
     fig.show()
 
 
-def plot_trajectories(acceleration, X, t, plane='xy'):
+def plot_trajectories(acceleration, X, t, plane='xy', limits=None):
     i = ord(plane[0])-120
     j = ord(plane[1])-120
     x = X[:, :, i]
     y = X[:, :, j]
-    fig = plot_2D(acceleration, plane, limits=[(x.min(), x.max()), (y.min(), y.max())], numpoints=30)
+
+    if limits is None:
+        limits = [(x.min(), x.max()), (y.min(), y.max())]
+    fig = plot_2D(acceleration, plane, limits=limits, numpoints=100)
 
     for p in range(X.shape[1]):
         fig.add_trace(go.Scatter(x=x[:, p], y=y[:, p], line=dict(color='#ffffff')))
@@ -36,6 +39,7 @@ def plot_trajectories(acceleration, X, t, plane='xy'):
         xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=r'${}$'.format(plane[0]))),
         yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=r'${}$'.format(plane[1])))
         )
-    fig.update_xaxes(range=[x.min(), x.max()])
-    fig.update_yaxes(range=[y.min(), y.max()])
+
+    fig.update_xaxes(range=[limits[0][0], limits[0][1]])
+    fig.update_yaxes(range=[limits[1][0], limits[1][1]])
     fig.show()
