@@ -89,9 +89,9 @@ class Solver:
     def capture_velocity(self, rmax=1e-3, vmax=1e-3):
         vi = self.get_velocity(0)[self.trapped(rmax, vmax)]
         if len(vi) > 0:
-            return vi.max()
+            return vi.min(), vi.max()
         else:
-            return 0
+            return 0, 0
 
     def trapped(self, rmax=1e-3, vmax=1e-3):
         ''' Return indices of atoms within a phase-space threshold at the end of the simulation '''
