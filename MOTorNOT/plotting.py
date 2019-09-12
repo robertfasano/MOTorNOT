@@ -22,7 +22,7 @@ def sample_2d(func, plane, limits, numpoints):
 
     return X, agrid, a
 
-def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True):
+def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True, quiver_scale=30):
     ''' Generates a 2D plot of the passed vector function in the given plane. '''
 
     i = ord(plane[0]) - 120    # ordinate index
@@ -53,7 +53,7 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
         if ay.max() != 0:
             ay /= ay.max() / 10
         # scale = 1e-4
-        scale = (limits[0][1] - limits[0][0])/500 * (30/numpoints)
+        scale = (limits[0][1] - limits[0][0])/500 * (quiver_scale/numpoints)
         fig = ff.create_quiver(xg, yg, ax, ay, scale=scale)
         fig['data'][0]['line']['color'] = 'rgb(255,255,255)'
 
