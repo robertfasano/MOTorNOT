@@ -9,7 +9,7 @@ atom = load_parameters()['atom']
 Isat = atom['Isat'] * 10   # convert from mW/cm^2 to W/cm^2
 
 class gratingMOT():
-    def __init__(self, position, alpha, detuning, radius, power, handedness, R1, field, beam_type = 'uniform'):
+    def __init__(self, position, alpha, detuning, radius, power, handedness, R1, field, sectors=3, beam_type = 'uniform'):
         ''' Creates a virtual laser beam. Params dict should contain the following fields:
                 position (float): grating offset from z=0
                 alpha (float): diffraction angle in degrees
@@ -23,10 +23,10 @@ class gratingMOT():
         self.field = field
         alpha *= np.pi/180
         self.beams = []
-        for n in [1,2,3]:
-            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type))
-        for n in [-1, -2, -3]:
-            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type))
+        for n in np.linspace(1, sectors, sectors):
+            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type, sectors=sectors))
+        for n in np.linspace(-1, -sectors, sectors):
+            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type, sectors=sectors))
 
         beam_params = {'direction': np.array([0,0,-1]),
                                 'power': power,
@@ -64,20 +64,32 @@ class gratingMOT():
         return force
 
 
-    def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50):
+    def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50, quiver_scale=30):
         from MOTorNOT.plotting import plot_2D
-        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True)
+        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True, quiver_scale=quiver_scale)
         fig.show()
 
+def between_angles(theta, a, b):
+    theta = theta % (2*np.pi)
+    a = a % (2*np.pi)
+    b = b % (2*np.pi)
+    if a < b:
+        return np.logical_and(a <= theta, theta <= b)
+    return np.logical_or(a <= theta, theta <= b)
+
 class diffractedBeam():
-    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform'):
+    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform', sectors=3):
         self.beam_type = beam_type
         self.n = n
-        self.phi = np.pi/3*(4*np.abs(n)-5)
-        self.direction = np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha),
+        self.sectors = sectors
+        # self.phi = np.pi/3*(4*np.abs(n)-5)
+        self.phi = (np.pi * (1 + (2*np.abs(n)+1)/sectors)) % (2*np.pi)
+        # self.direction = np.array([-np.sign(n)*np.cos(self.phi)*np.sin(alpha),
+        #                            np.sign(n)*np.sin(self.phi)*np.sin(alpha),
+        #                            np.cos(alpha)])
+        self.direction = np.array([np.sign(n)*np.cos(self.phi)*np.sin(alpha),
                                    np.sign(n)*np.sin(self.phi)*np.sin(alpha),
                                    np.cos(alpha)])
-
         self.power = power
         self.radius = radius
         self.detuning = detuning
@@ -92,9 +104,11 @@ class diffractedBeam():
         y = X.T[1] - self.direction[1] * (X.T[2]-self.z0)/np.cos(self.alpha)
         r = np.sqrt(x**2+y**2)
         phi = np.mod(np.arctan2(y, x),2*np.pi)
-
+        min_angle = self.phi + np.pi - np.pi/self.sectors
+        max_angle = self.phi + np.pi + np.pi/self.sectors
+        angular_inequality = between_angles(phi, min_angle, max_angle)
         radial_inequality = (r <= self.radius)
-        angular_inequality = (2*np.pi/3*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/3*np.abs(self.n))
+        # angular_inequality = (2*np.pi/self.sectors*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/self.sectors*np.abs(self.n))
         vertical_inequality = (X.T[2]-self.z0) > 0
         return radial_inequality & angular_inequality & vertical_inequality
 
@@ -118,9 +132,11 @@ class diffractedBeam():
         y = X.T[1] - self.direction[1] * (X.T[2]-self.z0)/np.cos(self.alpha)
         r = np.sqrt(x**2+y**2)
         phi = np.mod(np.arctan2(y, x),2*np.pi)
-
+        min_angle = self.phi + np.pi - np.pi/self.sectors
+        max_angle = self.phi + np.pi + np.pi/self.sectors
+        angular_inequality = between_angles(phi, min_angle, max_angle)
         radial_inequality = (r <= self.radius)
-        angular_inequality = (2*np.pi/3*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/3*np.abs(self.n))
+        # angular_inequality = (2*np.pi/self.sectors*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/self.sectors*np.abs(self.n))
         vertical_inequality = (X.T[2]-self.z0) > 0
 
         return self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality
