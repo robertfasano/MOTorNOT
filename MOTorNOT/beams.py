@@ -23,12 +23,16 @@ class Beam():
     detuning = attr.ib(converter=float)
     handedness = attr.ib(converter=int)
     origin = attr.ib(default=np.array([0, 0, 0]))
+    cutoff = attr.ib(default=None)
 
     def exists_at(self, X):
         ''' A boolean check for whether or not the beam exists at position X. Only works for beams along the x, y, or z axes; arbitrary directions will be supported later. Also assumes that the beam passes through the origin. '''
         X0 = X-self.origin
         r = np.linalg.norm(-X0+np.outer(np.dot(X0, self.direction), (self.direction)), axis=1)
-        return r < self.radius
+        if self.cutoff is None:
+            return r < self.radius
+        else:
+            return (r < self.radius) & (r < self.cutoff)
 
     @staticmethod
     def eta(b, khat, s):
@@ -78,7 +82,7 @@ class GaussianBeam(Beam):
         r = np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1)
         w = self.radius
         I = self.power/np.pi/self.radius**2
-        return I*np.exp(-2*r**2/w**2)
+        return I*np.exp(-2*r**2/w**2) * (r <= self.cutoff)
 
 @attr.s
 class Beams():
@@ -98,7 +102,7 @@ class Beams():
         rate = 0
         if i is not None:
             return self.beams[i].scattering_rate(X, V, self.field(X), self.total_intensity(X))
-            
+
         for beam in self.beams:
             rate += beam.scattering_rate(X, V, self.field(X), self.total_intensity(X))
         return rate

@@ -9,7 +9,7 @@ atom = load_parameters()['atom']
 Isat = atom['Isat'] * 10   # convert from mW/cm^2 to W/cm^2
 
 class gratingMOT():
-    def __init__(self, position, alpha, detuning, radius, power, handedness, R1, field, sectors=3, beam_type = 'uniform'):
+    def __init__(self, position, alpha, detuning, radius, power, handedness, R1, field, sectors=3, grating_radius=None, beam_type = 'uniform'):
         ''' Creates a virtual laser beam. Params dict should contain the following fields:
                 position (float): grating offset from z=0
                 alpha (float): diffraction angle in degrees
@@ -24,15 +24,19 @@ class gratingMOT():
         alpha *= np.pi/180
         self.beams = []
         for n in np.linspace(1, sectors, sectors):
-            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type, sectors=sectors))
+            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type, sectors=sectors, grating_radius=grating_radius))
         for n in np.linspace(-1, -sectors, sectors):
-            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type, sectors=sectors))
+            self.beams.append(diffractedBeam(n, alpha, R1*power/np.cos(alpha), radius, detuning, -handedness, position, beam_type=beam_type, sectors=sectors, grating_radius=grating_radius))
 
+        grating_radius=grating_radius
+        if grating_radius is None:
+            grating_radius = 2*radius
         beam_params = {'direction': np.array([0,0,-1]),
                                 'power': power,
                                 'radius': radius,
                                 'detuning': detuning,
-                                'handedness': handedness}
+                                'handedness': handedness,
+                                'cutoff': grating_radius}
         if beam_type == 'uniform':
             self.beams.append(Beam(**beam_params))
         elif beam_type == 'gaussian':
@@ -78,7 +82,7 @@ def between_angles(theta, a, b):
     return np.logical_or(a <= theta, theta <= b)
 
 class diffractedBeam():
-    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform', sectors=3):
+    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform', sectors=3, grating_radius=None):
         self.beam_type = beam_type
         self.n = n
         self.sectors = sectors
@@ -98,6 +102,9 @@ class diffractedBeam():
         self.I = power/np.pi/radius**2
         self.beta = self.I / Isat
         self.z0 = -position
+        self.grating_radius = grating_radius
+        if grating_radius is None:
+            self.grating_radius = radius
 
     def exists_at(self, X):
         x = X.T[0] - self.direction[0] * (X.T[2]-self.z0)/np.cos(self.alpha)
@@ -107,7 +114,7 @@ class diffractedBeam():
         min_angle = self.phi + np.pi - np.pi/self.sectors
         max_angle = self.phi + np.pi + np.pi/self.sectors
         angular_inequality = between_angles(phi, min_angle, max_angle)
-        radial_inequality = (r <= self.radius)
+        radial_inequality = (r <= self.radius) & (r <= self.grating_radius)
         # angular_inequality = (2*np.pi/self.sectors*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/self.sectors*np.abs(self.n))
         vertical_inequality = (X.T[2]-self.z0) > 0
         return radial_inequality & angular_inequality & vertical_inequality
@@ -135,11 +142,10 @@ class diffractedBeam():
         min_angle = self.phi + np.pi - np.pi/self.sectors
         max_angle = self.phi + np.pi + np.pi/self.sectors
         angular_inequality = between_angles(phi, min_angle, max_angle)
-        radial_inequality = (r <= self.radius)
         # angular_inequality = (2*np.pi/self.sectors*(np.abs(self.n)-1) < phi) & (phi < 2*np.pi/self.sectors*np.abs(self.n))
         vertical_inequality = (X.T[2]-self.z0) > 0
-
-        return self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality
+        I = self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality
+        return (r <= self.grating_radius) * I
 
     def scattering_rate(self, X, V, b, betaT):
         linewidth = 2*np.pi*atom['gamma']
