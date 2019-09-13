@@ -87,7 +87,7 @@ class Solver:
         plot_phase_space_trajectories(self.acceleration, X, V, axis=axis)
 
     def capture_velocity(self, rmax=1e-3, vmax=1e-3):
-        vi = self.get_velocity(0)[self.trapped(rmax, vmax)]
+        vi = self.get_velocity(0)[self.trapped(rmax, vmax)].max(axis=1)
         if len(vi) > 0:
             return vi.min(), vi.max()
         else:
