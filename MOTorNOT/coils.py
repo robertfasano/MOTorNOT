@@ -29,6 +29,14 @@ class Coils():
         from MOTorNOT.plotting import subplots
         subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
 
+    def gradient(self, X, axis='z'):
+        ''' Evaluates the gradient at a point X along a given axis using a
+            finite difference approximation. '''
+        X = np.atleast_2d(X)
+        dX = np.zeros(X.shape)
+        dX[:, {'x': 0, 'y': 1, 'z': 2}[axis]] = 1e-4
+        return (self.field(X+dX) - self.field(X-dX)) / 2e-4   # units: T/m
+
 class QuadrupoleCoils(Coils):
     def __init__(self, radius, offset, turns, current, axis, deltaI=0):
         ''' Creates a pair of coils with equal and opposite offsets and currents. '''
