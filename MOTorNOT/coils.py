@@ -36,6 +36,12 @@ class QuadrupoleCoils(Coils):
         coil2 = Coil(radius, -offset, turns, -current+deltaI/2, axis)
         super().__init__([coil1, coil2])
 
+def div(a, b):
+    with np.errstate(divide='ignore'):
+        res = np.divide(a, b)
+        res[b==0] = 0
+    return res
+
 @attr.s
 class Coil():
     ''' Creates a virtual coil.
@@ -75,28 +81,21 @@ class Coil():
         r = np.sqrt(x**2+y**2)
 
         field = np.zeros(X.shape)
-        alpha=r/self.radius
-        beta=(z-self.offset)/self.radius
-        Q=(1+alpha)**2+beta**2
-        m=4*alpha/Q
+        alpha = r/self.radius
+        beta = (z-self.offset)/self.radius
+        Q = (1+alpha)**2+beta**2
+        m = 4*div(alpha, Q)
 
-        gamma = np.zeros(X.shape[0])
-        nonzero_indices = np.where(r != 0)[0]
-        gamma[nonzero_indices] = (z[nonzero_indices]-self.offset)/r[nonzero_indices]
-
+        gamma = div(z-self.offset, r)
         E_integral = ellipeinc(np.pi/2, m)
         K_integral = ellipk(m)
 
         prefactor = mu_0*self.turns*self.current/(2*np.pi*self.radius*Q)
-        transverse_part = gamma*((1+alpha**2+beta**2)/(Q-4*alpha)*E_integral-K_integral)
-        axial_part = ((1-alpha**2-beta**2)/(Q-4*alpha)*E_integral+K_integral)
+        transverse_field = prefactor*gamma*((1+alpha**2+beta**2)/(Q-4*alpha)*E_integral-K_integral)
+        axial_field = prefactor*((1-alpha**2-beta**2)/(Q-4*alpha)*E_integral+K_integral)
 
-        transverse_field = prefactor*transverse_part
-        axial_field = prefactor*axial_part
-
-        if len(nonzero_indices) > 0:
-            field[:,0] = (transverse_field[nonzero_indices] * x[nonzero_indices]/r[nonzero_indices])
-            field[:,1] = (transverse_field[nonzero_indices] * y[nonzero_indices]/r[nonzero_indices])
+        field[:, 0] = transverse_field * div(x, r)
+        field[:, 1] = transverse_field * div(y, r)
         field[:,2] = axial_field
 
         ''' Rotate to correct axis '''
