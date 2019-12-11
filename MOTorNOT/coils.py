@@ -42,10 +42,10 @@ class QuadrupoleCoils(Coils):
         ''' Creates a pair of coils with equal and opposite offsets and currents. '''
         coil1 = Coil(radius, offset, turns, current+deltaI/2, axis)
         coil2 = Coil(radius, -offset, turns, -current+deltaI/2, axis)
-        super().__init__([coil1, coil2])
+        super().__init__(coils=[coil1, coil2])
 
 def div(a, b):
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide='ignore', invalid='ignore'):
         res = np.divide(a, b)
         res[b==0] = 0
     return res
