@@ -25,11 +25,15 @@ def generate_initial_conditions(x0, v0, theta=0, phi=0):
 
     length = np.maximum(lenx, lenv)
 
-    X = np.zeros((length, 3))
-    X[:, 2] = x0
+    if length == 0:
+        X = np.atleast_2d([0, 0, x0])
+        V = np.atleast_2d([0, 0, v0])
+    else:
+        X = np.zeros((length, 3))
+        X[:, 2] = x0
 
-    V = np.zeros((length, 3))
-    V[:, 2] = v0
+        V = np.zeros((length, 3))
+        V[:, 2] = v0
 
     Rx = rotate(0, theta)
     Rz = rotate(2, phi)
@@ -54,14 +58,14 @@ class Solver:
 
     def get_particle(self, i):
         ''' Returns a DataFrame containing the dynamics of the ith particle. '''
-        df = pd.DataFrame(index = self.t)
-        df['x'] = self.X[:, i, 0]
-        df['y'] = self.X[:, i, 1]
-        df['z'] = self.X[:, i, 2]
-        df['vx'] = self.V[:, i, 0]
-        df['vy'] = self.V[:, i, 1]
-        df['vz'] = self.V[:, i, 2]
-        return df
+        df = pd.DataFrame.from_dict({'x': self.X[:, i, 0],
+                                     'y': self.X[:, i, 1],
+                                     'z': self.X[:, i, 2],
+                                     'vx': self.V[:, i, 0],
+                                     'vy': self.V[:, i, 1],
+                                     'vz': self.V[:, i, 2]})
+
+        return df.set_index(self.t)
 
     def get_position(self, i):
         ''' Returns an array containing the positions at the ith timestep. '''
@@ -131,8 +135,7 @@ def solve(acceleration, X0, V0, duration, dt=None):
     y = r.y
     N = int(len(y)/6)
 
-    X = y[0:3*N, :].T
-    V = y[3*N:6*N, :].T
-    X = X.reshape(-1, N, 3)
-    V = V.reshape(-1, N, 3)
+    X = y[0:3*N, :].T.reshape(-1, N, 3)
+    V = y[3*N:6*N, :].T.reshape(-1, N, 3)
+
     return y, X, V, t
