@@ -1,11 +1,5 @@
 import numpy as np
 import attr
-from scipy.constants import hbar, physical_constants
-mu_B = physical_constants['Bohr magneton'][0]
-amu = physical_constants['atomic mass constant'][0]
-from MOTorNOT import load_parameters
-atom = load_parameters()['atom']
-Isat = atom['Isat'] * 10   # convert from mW/cm^2 to W/cm^2
 
 @attr.s
 class Beam:
@@ -18,6 +12,7 @@ class Beam:
     radius = attr.ib(converter=float)
     detuning = attr.ib(converter=float)
     handedness = attr.ib(converter=int)
+    origin = attr.ib(default=np.array([0, 0, 0]))
     cutoff = attr.ib(default=None)
 
 @attr.s
@@ -70,7 +65,6 @@ class DiffractedBeam(Beam):
         super().__init__(self.direction, power, radius, detuning, handedness, cutoff=grating_radius)
         self.alpha = alpha
         self.I = power/np.pi/radius**2
-        self.beta = self.I / Isat
         self.z0 = -position
         self.grating_radius = grating_radius
         if grating_radius is None:
@@ -87,14 +81,15 @@ class DiffractedBeam(Beam):
         angular_inequality = between_angles(phi, min_angle, max_angle)
         vertical_inequality = (X.T[2]-self.z0) > 0
         if self.beam_type == 'gaussian':
-            I = self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality
+            I = self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality * vertical_inequality
         else:
             I = radial_inequality * angular_inequality * vertical_inequality * self.I
         return (r <= self.grating_radius) * I
 
+@attr.s
 class GaussianBeam(Beam):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    # origin = attr.ib(default=np.array([0, 0, 0]))
+
 
     def intensity(self, X):
         X0 = X-self.origin
