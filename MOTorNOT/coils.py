@@ -37,6 +37,14 @@ class Coils():
         dX[:, {'x': 0, 'y': 1, 'z': 2}[axis]] = 1e-4
         return (self.field(X+dX) - self.field(X-dX)) / 2e-4   # units: T/m
 
+@attr.s
+class LinearQuadrupole(Coils):
+    B0 = attr.ib(converter=float)
+    coils = attr.ib(default=None)
+    
+    def field(self, X, V=None):
+        return np.multiply(X, np.array([1, 1, -2])) * self.B0
+
 class QuadrupoleCoils(Coils):
     def __init__(self, radius, offset, turns, current, axis, deltaI=0):
         ''' Creates a pair of coils with equal and opposite offsets and currents. '''
