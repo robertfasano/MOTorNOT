@@ -74,6 +74,15 @@ class MOT:
         fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True, quiver_scale=quiver_scale)
         fig.show()
 
+    def phase_plot(self, axis='x', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50):
+        from MOTorNOT.plotting import plot_phase_space_force
+        import plotly.graph_objs as go
+
+        surf = plot_phase_space_force(self.acceleration, axis=axis, limits=limits, numpoints=numpoints)
+        fig = go.Figure([surf])
+
+        fig.show()
+
     @staticmethod
     def eta(b, khat, s):
         ''' Transition amplitude to states [-1, 0, 1].
