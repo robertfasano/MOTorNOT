@@ -25,14 +25,6 @@ class UniformBeam(Beam):
             detuning (float)
             handedness (int): +/- 1 for circular polarization.
     '''
-    direction = attr.ib(converter=np.array)
-    power = attr.ib(converter=float)
-    radius = attr.ib(converter=float)
-    detuning = attr.ib(converter=float)
-    handedness = attr.ib(converter=int)
-    origin = attr.ib(default=np.array([0, 0, 0]))
-    cutoff = attr.ib(default=None)
-
     def exists_at(self, X):
         ''' A boolean check for whether or not the beam exists at position X. Only works for beams along the x, y, or z axes; arbitrary directions will be supported later. Also assumes that the beam passes through the origin. '''
         X0 = X-self.origin
@@ -88,9 +80,6 @@ class DiffractedBeam(Beam):
 
 @attr.s
 class GaussianBeam(Beam):
-    # origin = attr.ib(default=np.array([0, 0, 0]))
-
-
     def intensity(self, X):
         X0 = X-self.origin
         r = np.linalg.norm(-X0+np.outer(np.dot(X0,self.direction),(self.direction)),axis=1)
