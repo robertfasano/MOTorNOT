@@ -36,7 +36,7 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
     surf = go.Heatmap(x=xi,
                       y=xj,
                       z=agrid,
-                      colorscale="Viridis",
+                      colorscale="Rainbow",
                       zsmooth='best',
                       colorbar={'title': 'Acceleration', 'titleside': 'right'})
     if quiver:
@@ -81,7 +81,7 @@ def plot_phase_space_force(func, axis='x', limits=[(-20e-3, 20e-3), (-20e-3, 20e
     surf = go.Heatmap(x=x,
                       y=v,
                       z=agrid,
-                      colorscale="Viridis",
+                      colorscale="Rainbow",
                       colorbar={'title': 'Acceleration', 'titleside': 'right'})
 
     return surf
