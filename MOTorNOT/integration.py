@@ -13,9 +13,6 @@ def generate_initial_conditions(x0, v0, theta=0, phi=0):
         axis, then rotates to the spherical coordinates theta and
         phi.
     '''
-    theta *= np.pi/180
-    phi *= np.pi/180
-
     lenx = 0
     if hasattr(x0, '__len__'):
         lenx = len(x0)

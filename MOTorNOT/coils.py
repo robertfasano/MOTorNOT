@@ -41,7 +41,7 @@ class Coils():
 class LinearQuadrupole(Coils):
     B0 = attr.ib(converter=float)
     coils = attr.ib(default=None)
-    
+
     def field(self, X, V=None):
         return np.multiply(X, np.array([1, 1, -2])) * self.B0
 
@@ -87,10 +87,10 @@ class Coil():
         X = np.atleast_2d(X)
         if self.axis == 0:
             ''' Apply -90 degree rotation around y '''
-            X = np.dot(rotate(1, -np.pi/2), X.T).T
+            X = np.dot(rotate(1, -90), X.T).T
         elif self.axis == 1:
             ''' Apply 90 degree rotation around x '''
-            X = np.dot(rotate(0, np.pi/2), X.T).T
+            X = np.dot(rotate(0, 90), X.T).T
         x = X[:,0]
         y = X[:,1]
         z = X[:,2]
@@ -116,7 +116,7 @@ class Coil():
 
         ''' Rotate to correct axis '''
         if self.axis == 0:
-            return np.dot(rotate(1, np.pi/2), field.T).T
+            return np.dot(rotate(1, 90), field.T).T
         elif self.axis == 1:
-            return np.dot(rotate(0, -np.pi/2), field.T).T
+            return np.dot(rotate(0, -90), field.T).T
         return field

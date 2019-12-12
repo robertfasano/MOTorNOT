@@ -9,7 +9,7 @@ def load_parameters():
 
 import numpy as np
 def rotate(axis, theta):
-    c, s = np.cos(theta), np.sin(theta)
+    c, s = np.cos(np.pi/180 * theta), np.sin(np.pi/180 * theta)
 
     if axis == 0:
         mat = [[1, 0, 0], [0, c, -s], [0, s, c]]
