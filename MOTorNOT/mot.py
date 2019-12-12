@@ -101,11 +101,15 @@ class MOT:
 
 
 class SixBeam(MOT):
-    def __init__(self, power, radius, detuning, handedness, field):
+    def __init__(self, power, radius, detuning, handedness, field, theta=0, phi=0):
+        from MOTorNOT import rotate
         beams = []
         directions = [[-1, 0, 0], [1, 0, 0], [0, 1, 0], [0, -1, 0]]
         for d in directions:
-            beam = Beam(direction = np.array(d),
+            d = np.dot(rotate(0, theta), d)
+            d = np.dot(rotate(2, phi), d)
+
+            beam = UniformBeam(direction = np.array(d),
                         power = power,
                         radius = radius,
                         detuning = detuning,
@@ -114,7 +118,9 @@ class SixBeam(MOT):
 
         directions = [[0, 0, 1], [0, 0, -1]]
         for d in directions:
-            beam = Beam(direction = np.array(d),
+            d = np.dot(rotate(0, theta), d)
+            d = np.dot(rotate(2, phi), d)
+            beam = UniformBeam(direction = np.array(d),
                         power = power,
                         radius = radius,
                         detuning = detuning,
