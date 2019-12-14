@@ -69,9 +69,9 @@ class MOT:
 
         return force
 
-    def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50, quiver_scale=30):
+    def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50, quiver_scale=30, component='all'):
         from MOTorNOT.plotting import plot_2D
-        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True, quiver_scale=quiver_scale)
+        fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True, quiver_scale=quiver_scale, component=component)
         fig.show()
 
     def phase_plot(self, axis='x', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50):

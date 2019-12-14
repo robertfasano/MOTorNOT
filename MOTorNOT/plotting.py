@@ -2,7 +2,29 @@ import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import numpy as np
 
-def sample_2d(func, plane, limits, numpoints):
+def radial_projection(x, v):
+    ''' Returns the radial projection of a vector v at a position x'''
+    X = np.atleast_2d(x)
+    V = np.atleast_2d(v)
+
+
+    phi = np.mod(np.arctan2(X[:, 1], X[:, 0]), 2*np.pi)
+    xproj = np.transpose([np.cos(phi), np.zeros(len(phi)), np.zeros(len(phi))])
+    yproj = np.transpose([np.zeros(len(phi)), np.sin(phi), np.zeros(len(phi))])
+    rhat = xproj + yproj
+
+    return (rhat*V).sum(axis=1)
+
+def axial_projection(x, v):
+    ''' Returns the axial projection of a vector v at position x '''
+    X = np.atleast_2d(x)
+    V = np.atleast_2d(v)
+
+    zhat = np.array([0, 0, np.sign(X[:, 2])])
+
+    return (zhat*V).sum(axis=1)
+
+def sample_2d(func, plane, limits, numpoints, component='all'):
     i = ord(plane[0]) - 120    # ordinate index
     j = ord(plane[1]) - 120    # abscissa index
 
@@ -18,21 +40,27 @@ def sample_2d(func, plane, limits, numpoints):
 
     ## compute function at coordinates
     a = func(X, V)
-    agrid = np.linalg.norm(a, axis=1).reshape((numpoints, numpoints)).T
+    if component == 'all':
+        agrid = np.linalg.norm(a, axis=1).reshape((numpoints, numpoints)).T
+    elif component == 'radial':
+        agrid = radial_projection(X, a).reshape((numpoints, numpoints)).T
+    elif component == 'axial':
+        agrid = axial_projection(X, a).reshape((numpoints, numpoints)).T
 
     return X, agrid, a
 
-def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True, quiver_scale=30):
+def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True, quiver_scale=30, component='all'):
     ''' Generates a 2D plot of the passed vector function in the given plane. '''
 
     i = ord(plane[0]) - 120    # ordinate index
     j = ord(plane[1]) - 120    # abscissa index
 
-    X, agrid, a = sample_2d(func, plane, limits, numpoints)
+    X, agrid, a = sample_2d(func, plane, limits, numpoints, component=component)
     xi = np.unique(X[:, i])
     xj = np.unique(X[:, j])
     ## create heatmap for norm of function
     fig = go.Figure()
+
     surf = go.Heatmap(x=xi,
                       y=xj,
                       z=agrid,
