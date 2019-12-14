@@ -93,8 +93,10 @@ class MOT:
         '''
         bT = b.T
         bnorm = np.linalg.norm(bT, axis=0)
-        # Bhat = np.divide(bT, bnorm, where=bnorm!=0)
-        Bhat = (bT/bnorm)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            Bhat = np.divide(bT, bnorm)
+            Bhat[:, bnorm==0] = 0
+
         xi = khat.dot(Bhat)
         return np.array([(1+s*xi)**2/4, (1-xi**2)/2, (1-s*xi)**2/4]).T
 
