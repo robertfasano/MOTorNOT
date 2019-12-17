@@ -49,7 +49,10 @@ def sample_2d(func, plane, limits, numpoints, component='all'):
 
     return X, agrid, a
 
-def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True, quiver_scale=30, component='all'):
+def plane_indices(plane):
+    return ord(plane[0])-120, ord(plane[1])-120
+
+def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoints=40, quiver=True, quiver_scale=5e-4, component='all'):
     ''' Generates a 2D plot of the passed vector function in the given plane. '''
 
     i = ord(plane[0]) - 120    # ordinate index
@@ -68,21 +71,15 @@ def plot_2D(func, plane='xy', limits=[(-20e-3, 20e-3), (-20e-3, 20e-3)], numpoin
                       zsmooth='best',
                       colorbar={'title': 'Acceleration', 'titleside': 'right'})
     if quiver:
-        n = int(numpoints/2)
-        X2, agrid2, a2 = sample_2d(func, plane, limits, n)
+        n = numpoints
+        X2, agrid2, a2 = X, agrid, a
         ## create quiver plot
         xg = X2[:, i].reshape(n, n)
         yg = X2[:, j].reshape(n, n)
-        ax = a2[:, i].reshape(n, n)
-        ay = a2[:, j].reshape(n, n)
+        ax = (a2[:, i] / np.linalg.norm(a2, axis=1)).reshape(n, n)
+        ay = (a2[:, j] / np.linalg.norm(a2, axis=1)).reshape(n, n)
 
-        if ax.max() != 0:
-            ax /= ax.max() / 10
-        if ay.max() != 0:
-            ay /= ay.max() / 10
-        # scale = 1e-4
-        scale = (limits[0][1] - limits[0][0])/500 * (quiver_scale/numpoints)
-        fig = ff.create_quiver(xg, yg, ax, ay, scale=scale)
+        fig = ff.create_quiver(xg, yg, ax, ay, scale=quiver_scale)
         fig['data'][0]['line']['color'] = 'rgb(255,255,255)'
 
     fig.add_trace(surf)
