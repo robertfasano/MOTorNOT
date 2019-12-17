@@ -1,6 +1,8 @@
 import numpy as np
 import attr
 from scipy.constants import hbar, physical_constants
+from scipy.optimize import root
+import plotly.graph_objs as go
 mu_B = physical_constants['Bohr magneton'][0]
 amu = physical_constants['atomic mass constant'][0]
 from MOTorNOT import load_parameters
@@ -70,12 +72,20 @@ class MOT:
         return force
 
     def plot(self, plane='xy', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50, quiver_scale=30, component='all'):
-        from MOTorNOT.plotting import plot_2D
+        from MOTorNOT.plotting import plot_2D, plane_indices
         fig = plot_2D(self.acceleration, plane=plane, limits=limits, numpoints=numpoints, quiver=True, quiver_scale=quiver_scale, component=component)
+
+        field_center = self.field_center()
+        trap_center = self.trap_center()
+        i, j = plane_indices(plane)
+        fig.add_trace(go.Scatter(x=[field_center[i]], y=[field_center[j]], marker={'symbol': 'x', 'color': 'white', 'size': 12}))
+        fig.add_trace(go.Scatter(x=[trap_center[i]], y=[trap_center[j]], marker={'symbol': 'circle-open', 'color': 'white', 'size': 12}))
+
         fig.show()
 
+
     def phase_plot(self, axis='x', limits=[(-10e-3, 10e-3), (-10e-3, 10e-3)], numpoints=50):
-        from MOTorNOT.plotting import plot_phase_space_force
+        from MOTorNOT.plotting import plot_phase_space_force, plane_indices
         import plotly.graph_objs as go
 
         surf = plot_phase_space_force(self.acceleration, axis=axis, limits=limits, numpoints=numpoints)
@@ -100,7 +110,17 @@ class MOT:
         xi = khat.dot(Bhat)
         return np.array([(1+s*xi)**2/4, (1-xi**2)/2, (1-s*xi)**2/4]).T
 
+    def trap_center(self):
+        ''' Numerically locate the potential minimum '''
+        def acceleration(x):
+            return self.acceleration(x, V=[0, 0, 0])[0]
+        return root(acceleration, x0=[0, 0, 0], tol=1e-4).x
 
+    def field_center(self):
+        ''' Numerically locate the field strength minimum '''
+        def field_strength(x):
+            return self.field(np.atleast_2d(x))[0]
+        return root(field_strength, x0=[0, 0, 0], tol=1e-4).x
 
 class SixBeam(MOT):
     def __init__(self, power, radius, detuning, handedness, field, theta=0, phi=0):
