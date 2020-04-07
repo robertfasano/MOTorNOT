@@ -94,12 +94,13 @@ class Solver:
         else:
             return 0, 0
 
-    def trapped(self, rmax=1e-3, vmax=1e-3):
-        ''' Return indices of atoms within a phase-space threshold at the end of the simulation '''
-        rf = np.linalg.norm(self.get_position(-1), axis=1)
-        vf = np.linalg.norm(self.get_velocity(-1), axis=1)
-        return np.where(np.logical_and(rf < rmax, vf < vmax))[0]
 
+    def trapped(self, rmax=1e-3, vmax=1e-3):
+        ''' Return indices of atoms within a velocity threshold at the end of the simulation.
+            Argument rmax currently does nothing.
+        '''
+        vf = np.linalg.norm(self.get_velocity(-1), axis=1)
+        return np.where(vf < vmax)[0]
 
 def solve(acceleration, X0, V0, duration, dt=None):
     ''' Integrates the equations of motion given by the specified force,
