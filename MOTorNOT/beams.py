@@ -63,20 +63,27 @@ class DiffractedBeam(Beam):
             self.grating_radius = radius
 
     def intensity(self, X):
-        x = X.T[0] - self.direction[0] * (X.T[2]-self.z0)/np.cos(self.alpha)
-        y = X.T[1] - self.direction[1] * (X.T[2]-self.z0)/np.cos(self.alpha)
-        r = np.sqrt(x**2+y**2)
-        phi = np.mod(np.arctan2(y, x),2*np.pi)
-        min_angle = self.phi + np.pi - np.pi/self.sectors
-        max_angle = self.phi + np.pi + np.pi/self.sectors
-        radial_inequality = (r <= self.radius) & (r <= self.grating_radius)
-        angular_inequality = between_angles(phi, min_angle, max_angle)
-        vertical_inequality = (X.T[2]-self.z0) > 0
+        x = X.T[0]
+        y = X.T[1]
+        z = X.T[2]
+        z0 = self.z0
+        ## trace wavevector backwards to grating plane and calculate intensity
+        x0 = x - (z-z0)*self.direction[0]/self.direction[2]
+        y0 = y - (z-z0)*self.direction[1]/self.direction[2]
+        r0 = np.sqrt(x0**2+y0**2)
+
+        I = self.I
         if self.beam_type == 'gaussian':
-            I = self.I*np.exp(-2*r**2/self.radius**2)*angular_inequality * vertical_inequality
-        else:
-            I = radial_inequality * angular_inequality * vertical_inequality * self.I
-        return (r <= self.grating_radius) * I
+            I *= np.exp(-2*r0**2/self.radius**2)
+
+        ## check if the in-plane point is in the sector; return 0 if not
+        radial_inequality = (r0 <= self.radius) & (r0 <= self.grating_radius)
+        phi = np.mod(np.arctan2(y0, x0), 2*np.pi)
+        angular_inequality = between_angles(phi, self.phi + np.pi - np.pi/self.sectors, self.phi + np.pi + np.pi/self.sectors)
+        axial_inequality = z > z0
+
+        return I * radial_inequality * angular_inequality * axial_inequality
+
 
 @attr.s
 class GaussianBeam(Beam):
