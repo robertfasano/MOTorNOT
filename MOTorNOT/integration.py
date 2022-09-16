@@ -5,8 +5,7 @@ from scipy.integrate import solve_ivp
 from scipy.constants import physical_constants
 
 amu = physical_constants['atomic mass constant'][0]
-from MOTorNOT import load_parameters, rotate
-atom = load_parameters()['atom']
+from MOTorNOT import rotate
 
 def generate_initial_conditions(x0, v0, theta=0, phi=0):
     ''' Generates atomic positions and velocities along the z
@@ -46,11 +45,11 @@ class Solver:
     X0 = attr.ib(converter=np.atleast_2d)
     V0 = attr.ib(converter=np.atleast_2d)
 
-    def run(self, duration, dt=None):
-        self.y, self.X, self.V, self.t = solve(self.acceleration,
+    def run(self, duration, dt=None, events=None):
+        self.y, self.X, self.V, self.t, self.events = solve(self.acceleration,
                                        self.X0,
                                        self.V0,
-                                       duration, dt=dt)
+                                       duration, dt=dt, events=events)
         return self
 
     def get_particle(self, i):
@@ -87,22 +86,44 @@ class Solver:
 
         plot_phase_space_trajectories(self.acceleration, X, V, axis=axis)
 
-    def capture_velocity(self, rmax=1e-3, vmax=1e-3):
-        vi = self.get_velocity(0)[self.trapped(rmax, vmax)].max(axis=1)
+    def capture_velocity(self, mot, rmax=1e-4, vmax=1e-4):
+        trapped_indices = self.trapped(mot, rmax, vmax)
+        vi = self.get_velocity(0)[trapped_indices].max(axis=1)
         if len(vi) > 0:
             return vi.min(), vi.max()
         else:
             return 0, 0
 
+    def axial_shift(self, mot):
+        z0 = -mot.beams[0].z0
+        z = np.linspace(-z0+1e-5, z0, 1000)
+        X0, V0 = generate_initial_conditions(z, 0, phi=0, theta=0)
+        az = mot.acceleration(X0, V0)[:, 2]
+        idx_trap = np.where([np.diff(np.sign(az))==-2])[1]
+        return z[idx_trap]
+    # def trapped(self, rmax=1e-3, vmax=1e-3):
+    #     ''' Return indices of atoms within a velocity threshold at the end of the simulation.
+    #         Argument rmax currently does nothing.
+    #     '''
+    #     vf = np.linalg.norm(self.get_velocity(-1), axis=1)
+    #     return np.where(vf < vmax)[0]
 
-    def trapped(self, rmax=1e-3, vmax=1e-3):
+
+    def trapped(self, mot, rmax=1e-3, vmax=1e-3):
         ''' Return indices of atoms within a velocity threshold at the end of the simulation.
             Argument rmax currently does nothing.
         '''
         vf = np.linalg.norm(self.get_velocity(-1), axis=1)
-        return np.where(vf < vmax)[0]
+        z_trap = self.axial_shift(mot)
+        if len(z_trap) == 0:
+            return np.array([], dtype=int)
+        z_trap = z_trap[np.abs(z_trap).argmin()]   ## in case of two "stable" positions, take the one closest to the origin
+        dz = self.get_position(-1)[:, 2] - z_trap
+        is_trapped = np.logical_and(vf < vmax, dz <= rmax)
+        return np.where(is_trapped)[0]
 
-def solve(acceleration, X0, V0, duration, dt=None):
+
+def solve(acceleration, X0, V0, duration, dt=None, events=None):
     ''' Integrates the equations of motion given by the specified force,
         starting from given initial conditions.
     '''
@@ -125,15 +146,16 @@ def solve(acceleration, X0, V0, duration, dt=None):
     y0 = np.append(np.array(X0).flatten(), np.array(V0).flatten())
     if dt is not None:
         t_eval = np.arange(0, duration, dt)
-        r = solve_ivp(dydt, (0, duration), y0, t_eval=t_eval, vectorized=True)
+        r = solve_ivp(dydt, (0, duration), y0, t_eval=t_eval, vectorized=True, events=events)
     else:
-        r = solve_ivp(dydt, (0, duration), y0, vectorized=True)
+        r = solve_ivp(dydt, (0, duration), y0, vectorized=True, events=events)
 
     t = r.t
     y = r.y
+    events = r.t_events
     N = int(len(y)/6)
 
     X = y[0:3*N, :].T.reshape(-1, N, 3)
     V = y[3*N:6*N, :].T.reshape(-1, N, 3)
 
-    return y, X, V, t
+    return y, X, V, t, events

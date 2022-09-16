@@ -41,9 +41,12 @@ class Coils():
 class LinearQuadrupole(Coils):
     B0 = attr.ib(converter=float)
     coils = attr.ib(default=None)
+    offset = attr.ib(converter=float, default=0)
 
     def field(self, X, V=None):
-        return np.multiply(X, np.array([1, 1, -2])) * self.B0
+        delta_z = np.zeros(X.shape)
+        delta_z[:, 2] = -self.offset
+        return np.multiply(X+delta_z, np.array([1, 1, -2])) * self.B0
 
 class QuadrupoleCoils(Coils):
     def __init__(self, radius, offset, turns, current, axis, deltaI=0):

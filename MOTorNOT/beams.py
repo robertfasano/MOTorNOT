@@ -14,6 +14,7 @@ class Beam:
     handedness = attr.ib(converter=int)
     origin = attr.ib(default=np.array([0, 0, 0]))
     cutoff = attr.ib(default=None)
+    infinite = attr.ib(default=False)
 
 @attr.s
 class UniformBeam(Beam):
@@ -35,6 +36,8 @@ class UniformBeam(Beam):
             return (r < self.radius) & (r < self.cutoff)
 
     def intensity(self, X):
+        if self.infinite:
+            return np.ones(len(X))*self.power/np.pi/self.radius**2
         return self.exists_at(X) * self.power/np.pi/self.radius**2
 
 def between_angles(theta, a, b):
@@ -46,7 +49,7 @@ def between_angles(theta, a, b):
     return np.logical_or(a <= theta, theta <= b)
 
 class DiffractedBeam(Beam):
-    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform', sectors=3, grating_radius=None):
+    def __init__(self, n, alpha, power, radius, detuning, handedness, position, origin = np.array([0,0,0]), beam_type='uniform', sectors=3, grating_radius=None, infinite=False):
         self.beam_type = beam_type
         self.n = n
         self.sectors = sectors
@@ -54,7 +57,8 @@ class DiffractedBeam(Beam):
         self.direction = np.array([np.sign(n)*np.cos(self.phi)*np.sin(alpha),
                                    np.sign(n)*np.sin(self.phi)*np.sin(alpha),
                                    np.cos(alpha)])
-        super().__init__(self.direction, power, radius, detuning, handedness, cutoff=grating_radius)
+
+        super().__init__(self.direction, power, radius, detuning, handedness, cutoff=grating_radius, infinite=infinite)
         self.alpha = alpha
         self.I = power/np.pi/radius**2
         self.z0 = -position
@@ -76,6 +80,8 @@ class DiffractedBeam(Beam):
         if self.beam_type == 'gaussian':
             I *= np.exp(-2*r0**2/self.radius**2)
 
+        if self.infinite: return np.ones(len(X))*I
+
         ## check if the in-plane point is in the sector; return 0 if not
         radial_inequality = (r0 <= self.radius) & (r0 <= self.grating_radius)
         phi = np.mod(np.arctan2(y0, x0), 2*np.pi)
@@ -84,6 +90,21 @@ class DiffractedBeam(Beam):
 
         return I * radial_inequality * angular_inequality * axial_inequality
 
+class PyramidBeam(Beam):
+    def __init__(self, leg_length, separation, direction, power, radius, detuning, handedness):
+        super().__init__(direction, power, radius, detuning, handedness)
+        self.d = leg_length
+        self.D = separation
+
+    def intensity(self, X):
+        x = X.T[0]
+        y = X.T[1]
+        z = X.T[2]
+        I = self.power/np.pi/self.radius**2
+        in_radius = (z+(self.d+self.D)/2)**2+y**2<self.radius**2
+        in_z_range = (-self.d/2 < z) * (z < self.d/2)
+
+        return I * in_radius * in_z_range
 
 @attr.s
 class GaussianBeam(Beam):

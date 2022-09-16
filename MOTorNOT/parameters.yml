@@ -1,6 +1,24 @@
-atom:
-  mass: 171          # mass in amu
-  gamma: 29e6        # linewidth divided by 2pi in Hz
-  wavelength: 399    # wavelength of transition in nm
-  gF: 1              # g-factor of transition
-  Isat: 60          # saturation intensity in mW/cm^2
+# # atom:
+# #   mass: 171          # mass in amu
+# #   gamma: 182e3        # linewidth divided by 2pi in Hz
+# #   wavelength: 556    # wavelength of transition in nm
+# #   gF: 1              # g-factor of transition
+# #   Isat: 0.14        # saturation intensity in mW/cm^2
+# atom:
+#   mass: 171          # mass in amu
+#   gamma: 29e6        # linewidth divided by 2pi in Hz
+#   wavelength: 399    # wavelength of transition in nm
+#   gF: 1              # g-factor of transition
+#   Isat: 60        # saturation intensity in mW/cm^2
+# # atom:
+# #   mass: 88          # mass in amu
+# #   gamma: 7.5e3        # linewidth divided by 2pi in Hz
+# #   wavelength: 689    # wavelength of transition in nm
+# #   gF: 1.5              # g-factor of transition
+# #   Isat: 0.003        # saturation intensity in mW/cm^2
+# # atom:
+# #   mass: 85          # mass in amu
+# #   gamma: 6e6        # linewidth divided by 2pi in Hz
+# #   wavelength: 780    # wavelength of transition in nm
+# #   gF: 1              # g-factor of transition
+# #   Isat: 1        # saturation intensity in mW/cm^2
