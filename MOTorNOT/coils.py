@@ -25,9 +25,9 @@ class Coils():
             field += coil.field(X, V)
         return field
 
-    def plot(self):
+    def plot(self, numpoints=50, quiver_scale=3e-4):
         from MOTorNOT.plotting import subplots
-        subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = 1e4)
+        subplots(self.field, numpoints=plot_params['numpoints'], label = 'B', units = 'G', scale = quiver_scale)
 
     def gradient(self, X, axis='z'):
         ''' Evaluates the gradient at a point X along a given axis using a

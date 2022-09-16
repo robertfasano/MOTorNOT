@@ -22,7 +22,7 @@ def plot_phase_space_trajectories(acceleration, X, V, axis='x'):
     fig.show()
 
 
-def plot_trajectories(acceleration, X, t, plane='xy', limits=None):
+def plot_trajectories(acceleration, X, t, plane='xy', limits=None, numpoints=50, quiver_scale=3e-4):
     i = ord(plane[0])-120
     j = ord(plane[1])-120
     x = X[:, :, i]
@@ -30,7 +30,7 @@ def plot_trajectories(acceleration, X, t, plane='xy', limits=None):
 
     if limits is None:
         limits = [(x.min(), x.max()), (y.min(), y.max())]
-    fig = plot_2D(acceleration, plane, limits=limits, numpoints=100)
+    fig = plot_2D(acceleration, plane, limits=limits, numpoints=numpoints, quiver_scale=quiver_scale)
 
     for p in range(X.shape[1]):
         fig.add_trace(go.Scatter(x=x[:, p], y=y[:, p], line=dict(color='#ffffff')))
